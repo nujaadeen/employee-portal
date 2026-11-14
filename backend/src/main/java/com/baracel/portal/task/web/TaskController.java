@@ -99,8 +99,11 @@ public class TaskController {
 
     @GetMapping("/api/tasks/{key}")
     @PreAuthorize("hasAuthority('task:view')")
-    public TaskDetailResponse detail(CurrentUser me, @PathVariable String key) {
-        TaskDetailDto d = service.detail(me, key);
+    public TaskDetailResponse detail(CurrentUser me, @PathVariable String key,
+                                     @RequestParam(defaultValue = "desc") @io.swagger.v3.oas.annotations.Parameter(description = "Order of the activity feed: desc (newest first, default) or asc") String activityOrder) {
+        if (!activityOrder.equalsIgnoreCase("asc") && !activityOrder.equalsIgnoreCase("desc"))
+            throw com.baracel.portal.common.web.ApiException.badRequest("invalid-order", "activityOrder must be asc or desc");
+        TaskDetailDto d = service.detail(me, key, activityOrder.equalsIgnoreCase("asc"));
         com.baracel.portal.task.service.TaskService.TaskRef ref = service.requireMemberRef(me, key);
         return new TaskDetailResponse(d, gitea.detail(ref.id(), ref.projectId()));
     }

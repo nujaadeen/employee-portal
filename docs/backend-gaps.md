@@ -1,12 +1,12 @@
 # Backend gaps found while building the frontend
 
-The frontend does not change backend code. Each gap below has a workaround in the UI.
+All eight gaps are fixed by prompt 03 (see docs/api.md). The frontend still contains its workarounds; the follow-up frontend prompt removes them.
 
-1. **No "project members" endpoint.** The Create task dialog needs candidate assignees. Workaround: it lists the company directory (`GET /api/employees?scope=directory`) and the server rejects a non-member with `not-a-member`, which the dialog shows next to the Assignee field.
-2. **Branch and PR dialogs need a repository name, but `GET /api/repos` needs `repo:view`.** Sales people may create branches (`task:edit`) yet cannot list repositories. Workaround: the repository field is a text box pre-filled from the task's existing Git link; people with `repo:view` get a list.
-3. **The board has no Gitea host.** The "gitea.baracel.internal" chip on the board screen needs the host. Workaround: the chip uses `VITE_GITEA_URL` (default `http://localhost:3000`).
-4. **No "Reset access" or "New role" endpoints.** Screens 04 and 09 show these buttons. They are left out of the UI.
-5. **No unread-only or paged notifications, no mark-all-read.** The bell lists the latest 50 and marks one at a time.
-6. **MFA state is only known for the password method** (`signInMethods[].mfa`). Social methods show Linked or Not linked only.
-7. **The generated API types make every field optional** because the Spring DTOs have no `@NotNull`/`@Schema(requiredMode)`. The frontend uses non-null assertions where the data is always present. Marking record components as required in springdoc would give stricter types.
-8. **Activity feed is newest first;** screen 07 reads oldest to newest in places. The UI keeps the server order.
+1. ~~No "project members" endpoint.~~ **Fixed:** `GET/POST /api/projects/{key}/members`, `DELETE /api/projects/{key}/members/{employeeId}`. Task create and update still reject a non-member assignee (`not-a-member`).
+2. ~~Branch and PR dialogs need a repository name, but `GET /api/repos` needs `repo:view`.~~ **Fixed:** `GET /api/projects/{key}/repos` (members with `task:view`). Branch and PR link calls accept only repositories linked to the task's project (`repo-not-linked`).
+3. ~~The board has no Gitea host.~~ **Fixed:** `GET /api/config` returns `giteaUrl` (setting `gitea.public-url`), `appName` and the leave types.
+4. ~~No "Reset access" or "New role" endpoints.~~ **Fixed:** `POST /api/employees/{id}/reset-access`, `POST /api/access/roles`, `DELETE /api/access/roles/{role}`.
+5. ~~No unread-only or paged notifications, no mark-all-read.~~ **Fixed:** `GET /api/notifications?unread&page&size` returns `{items,total,unreadCount,page,size}` (the response is no longer a bare array); `POST /api/notifications/read-all`.
+6. ~~MFA state is only known for the password method.~~ **Fixed:** `signInMethods[].mfa` is `ENABLED`, `DISABLED` or `PROVIDER_MANAGED`.
+7. ~~The generated API types make every field optional.~~ **Fixed:** every record component is `required` in `docs/openapi.json` unless marked `@Nullable`, which is optional and accepts null.
+8. ~~Activity feed is newest first only.~~ **Fixed:** `GET /api/tasks/{key}?activityOrder=asc|desc` (default `desc`).

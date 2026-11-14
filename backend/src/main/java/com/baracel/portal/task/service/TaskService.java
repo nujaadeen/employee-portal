@@ -87,7 +87,7 @@ public class TaskService {
     // ---- tasks ----
 
     @Transactional(readOnly = true)
-    public TaskDetailDto detail(CurrentUser me, String key) {
+    public TaskDetailDto detail(CurrentUser me, String key, boolean activityAscending) {
         Task t = memberTask(me, key);
         Project p = projects.findById(t.projectId).orElseThrow();
         Set<UUID> ids = new HashSet<>();
@@ -101,6 +101,8 @@ public class TaskService {
                 subtasks.findByTaskIdOrderByPositionAscIdAsc(t.id).stream().map(s -> new SubtaskDto(s.id, s.title, s.done)).toList(),
                 cs.stream().map(c -> new CommentDto(c.id, c.authorId, people.get(c.authorId).fullName(), c.body, c.createdAt)).toList(),
                 activities.findByTaskIdOrderByCreatedAtDescIdDesc(t.id).stream()
+                        .sorted(activityAscending ? Comparator.comparing((TaskActivity a) -> a.createdAt).thenComparing(a -> a.id)
+                                : Comparator.comparing((TaskActivity a) -> a.createdAt).thenComparing(a -> a.id).reversed())
                         .map(a -> new ActivityDto(a.id, a.actorName, a.kind, a.message, a.createdAt)).toList());
     }
 

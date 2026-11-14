@@ -129,4 +129,22 @@ class TaskIT extends IntegrationTest {
                 .andExpect(jsonPath("$[*].task.key", contains("BAR-142", "BAR-146")));
         mvc.perform(getAs("karim.aziz", "/api/tasks")).andExpect(jsonPath("$", hasSize(0)));
     }
+
+    @Test
+    void activityOrderIsNewestFirstUnlessAscendingIsAsked() throws Exception {
+        mvc.perform(postAs("omar.haddad", "/api/tasks/BAR-142/comments", "{\"body\":\"Latest\"}")).andExpect(status().isCreated());
+        // default and explicit desc: newest first, the creation entry last
+        for (String url : new String[]{"/api/tasks/BAR-142", "/api/tasks/BAR-142?activityOrder=desc", "/api/tasks/BAR-142?activityOrder=DESC"})
+            mvc.perform(getAs("aisha.rahman", url))
+                    .andExpect(jsonPath("$.task.activity[0].message").value("commented: Latest"))
+                    .andExpect(jsonPath("$.task.activity[-1:].message").value("created this task"));
+        // asc: the creation entry first, the newest last
+        mvc.perform(getAs("aisha.rahman", "/api/tasks/BAR-142?activityOrder=asc"))
+                .andExpect(jsonPath("$.task.activity[0].message").value("created this task"))
+                .andExpect(jsonPath("$.task.activity[-1:].message").value("commented: Latest"))
+                .andExpect(jsonPath("$.task.activity", hasSize(5)));
+        mvc.perform(getAs("aisha.rahman", "/api/tasks/BAR-142?activityOrder=sideways")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.type", endsWith("/invalid-order")));
+        mvc.perform(getAs("karim.aziz", "/api/tasks/BAR-142?activityOrder=asc")).andExpect(status().isNotFound());
+    }
 }

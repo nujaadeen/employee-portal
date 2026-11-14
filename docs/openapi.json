@@ -941,6 +941,15 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "name" : "activityOrder",
+          "in" : "query",
+          "description" : "Order of the activity feed: desc (newest first, default) or asc",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "desc"
+          }
         } ],
         "responses" : {
           "200" : {

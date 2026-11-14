@@ -8,14 +8,19 @@ Errors are RFC 7807 `application/problem+json`; `type` is `https://portal.barace
 (`pending-approval`, `forbidden`, `not-found`, `validation`, `invalid-signature`, `insufficient-balance`, `leave-overlap`, ...).
 A person whose status is `PENDING_APPROVAL` can only call `GET /api/me`; everything else answers 403 `pending-approval`.
 Permission strings below (for example `leave:approve`) are checked by the server. Hide UI from `GET /api/me` → `permissions`.
+In `openapi.json` every response and request field is `required` unless it is documented as nullable or optional (type `[x, "null"]`).
 Dates are ISO `yyyy-MM-dd`, timestamps are UTC instants. Paging is `page` (from 0) and `size` (max 100).
+
+> Prompt 03 added: project members and repositories, `/api/config`, reset access, custom roles, paged notifications with read-all, MFA state, required fields in the contract, and `activityOrder`. They are marked **new** below.
 
 ## Every screen (sidebar, header)
 | Endpoint | Notes |
 |---|---|
-| `GET /api/me` | id, code, name, email, jobTitle, department, status, `roles`, `permissions`, manager `{id,name}`, `signInMethods` (google, github, facebook, password with `linked` and `mfa`, read from the Keycloak Admin API), `unreadNotifications` |
-| `GET /api/notifications` | latest 50 |
+| `GET /api/me` | id, code, name, email, jobTitle, department, status, `roles`, `permissions`, manager `{id,name}`, `signInMethods` (google, github, facebook, password: `{key,label,linked,mfa}` with `mfa` = `ENABLED`, `DISABLED` or `PROVIDER_MANAGED`, read from the Keycloak Admin API), `unreadNotifications` |
+| `GET /api/config` **new** | any approved signed-in person: `{appName, giteaUrl, leaveTypes[{code,name,defaultDays}]}`. No secrets |
+| `GET /api/notifications?unread=&page=&size=` **new shape** | `{items, total, unreadCount, page, size}`; `size` default 20, max 100; newest first |
 | `POST /api/notifications/{id}/read` | |
+| `POST /api/notifications/read-all` **new** | marks only your own as read, `{updated}` |
 
 ## Dashboard (02)
 | Endpoint | Notes |
@@ -44,21 +49,26 @@ Dates are ISO `yyyy-MM-dd`, timestamps are UTC instants. Paging is `page` (from 
 | `GET /api/employees/{id}` | self, direct report, or `employee:records` | `{employee, roles?, signInMethods?, recentLeave}`; `roles` and `signInMethods` only for HR |
 | `PATCH /api/employees/{id}` | `employee:manage` | jobTitle, department, managerId, phone, location, giteaUsername, status, joinedOn |
 | `POST /api/employees/invite` | `employee:manage` | creates the employee as ONBOARDING and the Keycloak user (VERIFY_EMAIL + UPDATE_PASSWORD email) |
+| `POST /api/employees/{id}/reset-access` **new** | `employee:manage`. Sends Keycloak's UPDATE_PASSWORD + VERIFY_EMAIL mail, 204, audited. Only `access:manage` may do it for an administrator |
 | `POST /api/employees/{id}/approve` | `employee:manage` | `{role, managerId?, jobTitle?, department?}` → ACTIVE and Keycloak role. HR may assign EMPLOYEE, SALES, ENGINEER, MANAGER; HR and ADMIN need `access:manage` |
 
 ## Tasks (06, 07)
 | Endpoint | Permission | Notes |
 |---|---|---|
 | `GET /api/projects` | `task:view` | only projects you are a member of |
+| `GET /api/projects/{key}/members` **new** | `task:view`, caller is a member | `[{id,name,jobTitle,initials}]` |
+| `POST /api/projects/{key}/members` **new** | `employee:manage`, `access:manage`, or a manager (`employee:team`) who is a member | `{employeeId}`; 201 with the new list; 409 `already-a-member`; audited |
+| `DELETE /api/projects/{key}/members/{employeeId}` **new** | same | 204; audited |
+| `GET /api/projects/{key}/repos` **new** | `task:view`, caller is a member | repositories linked to the project: `[{projectId,fullName,defaultBranch,htmlUrl}]` |
 | `GET /api/projects/{key}/board?sprint=` | `task:view` | `columns[BACKLOG, IN_PROGRESS, IN_REVIEW, DONE]` with cards `{task, git}`, `taskCount`, `linkedToGitea`, `lastSyncedAt`. Default sprint is the active one |
 | `GET /api/tasks?assignee=me&dueBefore=&open=true` | `task:view` | |
-| `GET /api/tasks/{key}` | `task:view` | `{task{subtasks, comments, activity, reporter, sprint}, git{webhookLive, links, commits}}` |
+| `GET /api/tasks/{key}?activityOrder=asc\|desc` | `task:view` | `{task{subtasks, comments, activity, reporter, sprint}, git{webhookLive, links, commits}}`. Activity is newest first by default (`desc`) |
 | `POST /api/tasks` | `task:create` | `{projectKey, title, description?, priority?, assigneeId?, dueDate?, label?, sprintId?}` → key `BAR-158` |
 | `PATCH /api/tasks/{key}` | `task:edit` | |
 | `PATCH /api/tasks/{key}/status` | `task:edit` | `{status}` |
 | `POST /api/tasks/{key}/subtasks`, `PATCH/DELETE .../subtasks/{id}` | `task:edit` | |
 | `POST /api/tasks/{key}/comments` | `task:edit` | |
-| `POST /api/tasks/{key}/git/branch` | `task:edit` | `{repo?}` creates `feature/bar-142-slug` from the default branch (502 `gitea-unavailable` if Gitea fails) |
+| `POST /api/tasks/{key}/git/branch` | `task:edit` | `{repo?}` (must be linked to the task's project, else 400 `repo-not-linked`) creates `feature/bar-142-slug` from the default branch (502 `gitea-unavailable` if Gitea fails) |
 | `POST /api/tasks/{key}/git/link-pr` | `task:edit` | `{repo, prNumber}` |
 | `GET /api/repos?refresh=` | `repo:view` | repositories of your projects |
 | `POST /api/integrations/gitea/webhook` | none (HMAC) | `X-Gitea-Signature` = hex HMAC-SHA256 of the raw body with `GITEA_WEBHOOK_SECRET`; push, create, pull_request*, review and status events |
@@ -79,7 +89,9 @@ All AI endpoints need `ai:chat`.
 ## Roles and access (09), `access:manage` (ADMIN)
 | Endpoint | Notes |
 |---|---|
-| `GET /api/access/roles` | `[{name, people}]` (people from Keycloak) |
+| `GET /api/access/roles` | `[{name, description, builtIn, people}]` (people from Keycloak); built-in roles first, then custom ones |
+| `POST /api/access/roles` **new** | `{name, description?}`. Name: capital letters and underscores, 3 to 30 characters, not used yet (400 `invalid-role-name`, 409 `role-exists`). Creates the Keycloak realm role and an empty permission set. 201, audited |
+| `DELETE /api/access/roles/{role}` **new** | custom roles only (400 `built-in-role` otherwise) and only when nobody has the role (409 `role-in-use`). 204, audited |
 | `GET /api/access/roles/{role}/matrix` | `permissions[{key, label, hint, group, row, column(VIEW\|CREATE\|EDIT\|APPROVE\|PUBLISH), granted}]` |
 | `PUT /api/access/roles/{role}/matrix` | `{permissions:[keys]}`, audit logged, clears the permission cache |
 | `GET /api/access/identity-providers`, `PUT ...` | `[{alias, displayName, enabled, editable}]`; PUT `{providers:[{alias, enabled}]}` through the Keycloak Admin API |

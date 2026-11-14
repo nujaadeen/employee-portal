@@ -21,5 +21,5 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 5. Notifications paging and read-all
 - [x] 6. MFA state enum
 - [x] 7. Required fields in the contract
-- [ ] 8. Activity order
+- [x] 8. Activity order
 - [ ] Docs: api.md, openapi.json, backend-gaps.md, mvn verify
