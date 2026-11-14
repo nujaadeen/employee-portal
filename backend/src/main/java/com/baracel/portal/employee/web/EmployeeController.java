@@ -122,6 +122,13 @@ public class EmployeeController {
                 .body(item(v, Scope.ALL, service.views(List.of(v.managerId() == null ? v.id() : v.managerId())), Map.of()));
     }
 
+    @PostMapping("/{id}/reset-access")
+    @PreAuthorize("hasAuthority('employee:manage')")
+    public ResponseEntity<Void> resetAccess(CurrentUser me, @PathVariable UUID id) {
+        service.resetAccess(me, id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAuthority('employee:manage')")
     public EmployeeItem approve(CurrentUser me, @PathVariable UUID id, @Valid @RequestBody ApproveRequest body) {

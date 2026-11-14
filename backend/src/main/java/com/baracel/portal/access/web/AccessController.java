@@ -29,6 +29,19 @@ public class AccessController {
     @GetMapping("/roles")
     public List<RoleSummary> roles() { return service.roles(); }
 
+    public record CreateRoleRequest(@NotNull String name, String description) {}
+
+    @PostMapping("/roles")
+    public org.springframework.http.ResponseEntity<RoleSummary> createRole(CurrentUser me, @Valid @RequestBody CreateRoleRequest body) {
+        return org.springframework.http.ResponseEntity.status(201).body(service.createRole(me, body.name(), body.description()));
+    }
+
+    @DeleteMapping("/roles/{role}")
+    public org.springframework.http.ResponseEntity<Void> deleteRole(CurrentUser me, @PathVariable String role) {
+        service.deleteRole(me, role);
+        return org.springframework.http.ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/roles/{role}/matrix")
     public RoleMatrix matrix(@PathVariable String role) { return service.matrix(role); }
 

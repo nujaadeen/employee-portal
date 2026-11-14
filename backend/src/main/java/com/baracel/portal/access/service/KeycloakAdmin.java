@@ -24,4 +24,9 @@ public interface KeycloakAdmin {
     /** Creates the user with required actions and sends the action email. Returns the new Keycloak user id. */
     String createUser(String email, String firstName, String lastName);
     RealmInfo realm();
+    /** Sends Keycloak's execute-actions email (for example UPDATE_PASSWORD, VERIFY_EMAIL). No password is ever handled here. */
+    void sendActionsEmail(String userId, List<String> actions);
+    Set<String> realmRoleNames();
+    void createRole(String name, String description);
+    void deleteRole(String name);
 }

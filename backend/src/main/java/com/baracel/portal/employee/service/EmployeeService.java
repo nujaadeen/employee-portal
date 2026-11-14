@@ -1,5 +1,6 @@
 package com.baracel.portal.employee.service;
 
+import com.baracel.portal.access.service.AccessService;
 import com.baracel.portal.access.service.KeycloakAdmin;
 import com.baracel.portal.access.service.PortalRoles;
 import com.baracel.portal.common.security.CurrentUser;
@@ -37,8 +38,10 @@ public class EmployeeService {
     private final KeycloakAdmin keycloak;
     private final AuditService audit;
     private final Clock clock;
+    private final AccessService access;
 
-    public EmployeeService(EmployeeRepository repo, KeycloakAdmin keycloak, AuditService audit, Clock clock) {
+    public EmployeeService(EmployeeRepository repo, KeycloakAdmin keycloak, AuditService audit, Clock clock, AccessService access) {
+        this.access = access;
         this.repo = repo;
         this.keycloak = keycloak;
         this.audit = audit;
@@ -225,6 +228,23 @@ public class EmployeeService {
         if (e.joinedOn == null) e.joinedOn = LocalDate.now(clock);
         audit.log(me, "EMPLOYEE_APPROVED", "employee", e.code, "role=" + a.role() + " manager=" + a.managerId());
         return EmployeeView.of(e);
+    }
+
+    /**
+     * Sends Keycloak's "update your password and verify your email" mail. No password is created, returned or logged.
+     * Only someone who can manage access may do this for a person whose roles include access:manage (an administrator).
+     */
+    @Transactional
+    public void resetAccess(CurrentUser me, UUID id) {
+        Employee e = repo.findById(id).orElseThrow(() -> ApiException.notFound("Employee not found"));
+        boolean targetIsAdmin = access.permissionsForRoles(keycloak.userRoles(e.keycloakId)).contains("access:manage");
+        if (targetIsAdmin && !me.has("access:manage")) throw ApiException.forbidden("Only an administrator can reset access for an administrator.");
+        try {
+            keycloak.sendActionsEmail(e.keycloakId, List.of("UPDATE_PASSWORD", "VERIFY_EMAIL"));
+        } catch (org.springframework.web.client.RestClientException ex) {
+            throw new ApiException(org.springframework.http.HttpStatus.BAD_GATEWAY, "keycloak-unavailable", "Keycloak could not send the email.");
+        }
+        audit.log(me, "EMPLOYEE_ACCESS_RESET", "employee", e.code, "update-password and verify-email mail requested");
     }
 
     private void checkAssignable(CurrentUser me, String role) {

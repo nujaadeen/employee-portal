@@ -1,7 +1,9 @@
 package com.baracel.portal.access.service;
 
+import com.baracel.portal.access.domain.CustomRole;
 import com.baracel.portal.access.domain.Permission;
 import com.baracel.portal.access.domain.RolePermission;
+import com.baracel.portal.access.repo.CustomRoleRepository;
 import com.baracel.portal.access.repo.PermissionRepository;
 import com.baracel.portal.access.repo.RolePermissionRepository;
 import com.baracel.portal.common.security.CurrentUser;
@@ -19,13 +21,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccessService {
     private static final Logger log = LoggerFactory.getLogger(AccessService.class);
 
-    public record RoleSummary(String name, Integer people) {}
+    public record RoleSummary(String name, String description, boolean builtIn, Integer people) {}
     public record MatrixPermission(String key, String module, String action, String label, String hint, String group,
                                    String row, String column, boolean granted) {}
     public record RoleMatrix(String role, Integer people, List<MatrixPermission> permissions) {}
     public record IdentityProviderInfo(String alias, String displayName, boolean enabled, boolean editable) {}
     public record AccessSettings(String defaultRoleForNewSignUps, String approver, int sessionLengthHours) {}
 
+    private static final java.util.regex.Pattern ROLE_NAME = java.util.regex.Pattern.compile("^[A-Z_]{3,30}$");
+
+    private final CustomRoleRepository customRoles;
     private final PermissionRepository permissions;
     private final RolePermissionRepository rolePermissions;
     private final KeycloakAdmin keycloak;
@@ -36,10 +41,11 @@ public class AccessService {
 
     private volatile Map<String, Set<String>> cache;
 
-    public AccessService(PermissionRepository permissions, RolePermissionRepository rolePermissions, KeycloakAdmin keycloak,
+    public AccessService(CustomRoleRepository customRoles, PermissionRepository permissions, RolePermissionRepository rolePermissions, KeycloakAdmin keycloak,
                          AuditService audit, @Value("${portal.access.default-role:EMPLOYEE}") String defaultRole,
                          @Value("${portal.access.approver:HR}") String approver,
                          @Value("${portal.access.session-hours:8}") int sessionHours) {
+        this.customRoles = customRoles;
         this.permissions = permissions;
         this.rolePermissions = rolePermissions;
         this.keycloak = keycloak;
@@ -76,7 +82,39 @@ public class AccessService {
 
     @Transactional(readOnly = true)
     public List<RoleSummary> roles() {
-        return PortalRoles.ALL.stream().map(r -> new RoleSummary(r, count(r))).toList();
+        List<RoleSummary> out = new ArrayList<>();
+        PortalRoles.ALL.forEach(r -> out.add(new RoleSummary(r, null, true, count(r))));
+        customRoles.findAllByOrderByNameAsc().forEach(c -> out.add(new RoleSummary(c.name, c.description, false, count(c.name))));
+        return out;
+    }
+
+    /** Creates a Keycloak realm role and an empty permission set. */
+    @Transactional
+    public RoleSummary createRole(CurrentUser actor, String name, String description) {
+        if (name == null || !ROLE_NAME.matcher(name).matches())
+            throw ApiException.badRequest("invalid-role-name", "A role name has 3 to 30 characters: capital letters and underscores only.");
+        if (PortalRoles.ALL.contains(name) || customRoles.existsById(name) || keycloak.realmRoleNames().contains(name))
+            throw ApiException.conflict("role-exists", "A role named " + name + " already exists.");
+        keycloak.createRole(name, description);
+        CustomRole c = new CustomRole();
+        c.name = name;
+        c.description = description == null || description.isBlank() ? null : description.trim();
+        customRoles.save(c);
+        audit.log(actor, "ROLE_CREATED", "role", name, c.description);
+        return new RoleSummary(name, c.description, false, 0);
+    }
+
+    /** Only custom roles, and only when nobody holds the role. */
+    @Transactional
+    public void deleteRole(CurrentUser actor, String name) {
+        if (PortalRoles.ALL.contains(name)) throw ApiException.badRequest("built-in-role", name + " is a built-in role and cannot be deleted.");
+        CustomRole c = customRoles.findById(name).orElseThrow(() -> ApiException.notFound("Unknown role: " + name));
+        if (keycloak.countUsersWithRole(name) > 0) throw ApiException.conflict("role-in-use", "Some people still have the " + name + " role. Remove it from them first.");
+        keycloak.deleteRole(name);
+        rolePermissions.deleteAllByRole(name);
+        customRoles.delete(c);
+        clearCache();
+        audit.log(actor, "ROLE_DELETED", "role", name, null);
     }
 
     private Integer count(String role) {
@@ -122,7 +160,7 @@ public class AccessService {
     }
 
     private void requireRole(String role) {
-        if (!PortalRoles.ALL.contains(role)) throw ApiException.notFound("Unknown role: " + role);
+        if (!PortalRoles.ALL.contains(role) && !customRoles.existsById(role)) throw ApiException.notFound("Unknown role: " + role);
     }
 
     public List<IdentityProviderInfo> identityProviders() {

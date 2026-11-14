@@ -151,16 +151,42 @@ public class RestKeycloakAdmin implements KeycloakAdmin {
                     .contentType(MediaType.APPLICATION_JSON).body(body).retrieve().toBodilessEntity();
             String location = res.getHeaders().getFirst("Location");
             String id = location.substring(location.lastIndexOf('/') + 1);
-            http.put().uri(admin("/users/" + id + "/execute-actions-email?client_id=" + props.webClientId()
-                            + "&redirect_uri=" + props.webRedirectUri()))
-                    .headers(h -> h.setBearerAuth(token())).contentType(MediaType.APPLICATION_JSON).body(actions)
-                    .retrieve().toBodilessEntity();
+            sendActionsEmail(id, actions);
             return id;
         } catch (RestClientResponseException e) {
             if (e.getStatusCode().value() == 409) throw new ApiException(HttpStatus.CONFLICT, "user-exists",
                     "A sign-in account with this email already exists.");
             throw e;
         }
+    }
+
+    @Override
+    public void sendActionsEmail(String userId, List<String> actions) {
+        http.put().uri(admin("/users/" + userId + "/execute-actions-email?client_id=" + props.webClientId()
+                        + "&redirect_uri=" + props.webRedirectUri()))
+                .headers(h -> h.setBearerAuth(token())).contentType(MediaType.APPLICATION_JSON).body(actions)
+                .retrieve().toBodilessEntity();
+    }
+
+    @Override
+    public Set<String> realmRoleNames() {
+        Set<String> out = new HashSet<>();
+        for (Map<String, Object> m : get("/roles?first=0&max=1000").retrieve().body(LIST)) out.add((String) m.get("name"));
+        return out;
+    }
+
+    @Override
+    public void createRole(String name, String description) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", name);
+        body.put("description", description);
+        http.post().uri(admin("/roles")).headers(h -> h.setBearerAuth(token())).contentType(MediaType.APPLICATION_JSON).body(body)
+                .retrieve().toBodilessEntity();
+    }
+
+    @Override
+    public void deleteRole(String name) {
+        http.delete().uri(admin("/roles/" + name)).headers(h -> h.setBearerAuth(token())).retrieve().toBodilessEntity();
     }
 
     @Override
