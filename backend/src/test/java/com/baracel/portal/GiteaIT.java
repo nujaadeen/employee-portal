@@ -168,6 +168,18 @@ class GiteaIT extends IntegrationTest {
     }
 
     @Test
+    void realGiteaSendsNullReviewOnPlainPullRequestEvents() throws Exception {
+        // review request: payload carries "review": null and must still register the pending review
+        webhook("pull_request", "{\"action\":\"review_requested\",\"review\":null,\"pull_request\":{\"number\":72,\"title\":\"Z\",\"head\":{\"ref\":\"z\"},\"state\":\"open\"},"
+                + "\"requested_reviewer\":{\"login\":\"omar.haddad\"},\"repository\":{\"full_name\":\"baracel/portal\"},\"sender\":{\"login\":\"aisha.rahman\"}}").andExpect(status().isOk());
+        mvc.perform(getAs("omar.haddad", "/api/dashboard")).andExpect(jsonPath("$.pullRequestsAwaitingReview").value(1));
+        // merge: "review": null on a closed+merged event still moves BAR-138 to Done
+        webhook("pull_request", pr("closed", 54, "feature/bar-138-static-qr", "Static QR code generation", true, "5e7f9a1b3c4d6e8f0a2b4c6d8e0f1a3b5c7d9e1f").replace("{\"action\"", "{\"review\":null,\"action\""))
+                .andExpect(status().isOk());
+        mvc.perform(getAs("aisha.rahman", "/api/tasks/BAR-138")).andExpect(jsonPath("$.task.task.status").value("DONE"));
+    }
+
+    @Test
     void unknownEventsAreAcknowledged() throws Exception {
         webhook("issues", "{\"action\":\"opened\"}").andExpect(status().isOk()).andExpect(jsonPath("$.tasksUpdated").value(0));
     }

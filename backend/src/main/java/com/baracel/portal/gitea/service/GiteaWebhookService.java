@@ -70,7 +70,7 @@ public class GiteaWebhookService {
             case "status" -> status(p);
             // Gitea sends pull_request, pull_request_sync, _label, _assign, _review_request ... (payload has "action")
             // and pull_request_approved / _rejected / _review_comment ... (payload has "review").
-            default -> e.startsWith("pull_request") ? (p.has("review") ? review(p) : pullRequest(p)) : 0;
+            default -> e.startsWith("pull_request") ? (p.path("review").isObject() ? review(p) : pullRequest(p)) : 0;
         };
     }
 
