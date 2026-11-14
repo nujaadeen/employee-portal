@@ -1,5 +1,6 @@
 package com.baracel.portal.gitea.service;
 
+import com.baracel.portal.common.service.NotificationService;
 import com.baracel.portal.employee.service.EmployeeService;
 import com.baracel.portal.employee.service.EmployeeView;
 import com.baracel.portal.gitea.domain.*;
@@ -31,9 +32,11 @@ public class GiteaWebhookService {
     private final TaskCommitRepository commits;
     private final PrReviewRequestRepository reviews;
     private final GiteaProperties props;
+    private final NotificationService notifications;
 
     public GiteaWebhookService(TaskService tasks, EmployeeService employees, TaskGitLinkRepository links, TaskCommitRepository commits,
-                               PrReviewRequestRepository reviews, GiteaProperties props) {
+                               PrReviewRequestRepository reviews, GiteaProperties props, NotificationService notifications) {
+        this.notifications = notifications;
         this.tasks = tasks;
         this.employees = employees;
         this.links = links;
@@ -141,7 +144,14 @@ public class GiteaWebhookService {
 
         if ("review_requested".equals(action)) {
             String reviewer = p.path("requested_reviewer").path("login").asText(null);
-            if (reviewer != null) review(repo, number, title, pr.path("html_url").asText(null), reviewer, "PENDING");
+            if (reviewer != null) {
+                review(repo, number, title, pr.path("html_url").asText(null), reviewer, "PENDING");
+                Set<String> ks = keys(pr.path("head").path("ref").asText(), title, pr.path("body").asText(null));
+                UUID by = actorId(p);
+                employees.findByGiteaUsername(reviewer).filter(r -> !r.id().equals(by)).ifPresent(r -> notifications.notify(r.id(), r.email(),
+                        "PR_REVIEW_REQUESTED", "Review requested on PR #" + number, actor + " asked you to review \"" + title + "\" in " + repo + ".",
+                        ks.isEmpty() ? "/" : "/tasks/" + ks.iterator().next()));
+            }
         } else if ("review_request_removed".equals(action)) {
             String reviewer = p.path("requested_reviewer").path("login").asText(null);
             if (reviewer != null) review(repo, number, title, pr.path("html_url").asText(null), reviewer, "DONE");
@@ -167,12 +177,16 @@ public class GiteaWebhookService {
             switch (action) {
                 case "opened" -> {
                     tasks.addActivity(t.id(), actor, "PR", "opened pull request #" + number + " in " + repo);
-                    if (props.moveToReviewOnPrOpen()) tasks.moveIf(t.id(), TaskStatus.IN_PROGRESS, TaskStatus.IN_REVIEW, actor, "pull request opened");
+                    boolean moved = props.moveToReviewOnPrOpen() && tasks.moveIf(t.id(), TaskStatus.IN_PROGRESS, TaskStatus.IN_REVIEW, actor, "pull request opened");
+                    tell(t, actorId(p), "PR_OPENED", "Pull request #" + number + " opened for " + t.key(),
+                            actor + " opened pull request #" + number + " in " + repo + (moved ? ". The task moved to In review." : "."));
                 }
                 case "reopened" -> tasks.addActivity(t.id(), actor, "PR", "reopened pull request #" + number + " in " + repo);
                 case "closed" -> {
                     tasks.addActivity(t.id(), actor, "PR", (merged ? "merged" : "closed") + " pull request #" + number + " in " + repo);
-                    if (merged && props.moveToDoneOnPrMerge()) tasks.moveIf(t.id(), TaskStatus.IN_REVIEW, TaskStatus.DONE, actor, "pull request merged");
+                    boolean done = merged && props.moveToDoneOnPrMerge() && tasks.moveIf(t.id(), TaskStatus.IN_REVIEW, TaskStatus.DONE, actor, "pull request merged");
+                    if (merged) tell(t, actorId(p), "PR_MERGED", "Pull request #" + number + " merged for " + t.key(),
+                            actor + " merged pull request #" + number + " in " + repo + (done ? ". The task is now Done." : "."));
                 }
                 default -> { }
             }
@@ -198,6 +212,20 @@ public class GiteaWebhookService {
             else if (type.contains("rejected")) verb = "requested changes on";
             else verb = "reviewed";
             tasks.addActivity(t.id(), actor, "REVIEW", verb + " pull request #" + number + " in " + repo);
+        }
+        if (type.contains("approved") || type.contains("rejected")) {
+            boolean ok = type.contains("approved");
+            UUID by = actorId(p);
+            Set<UUID> to = new LinkedHashSet<>();
+            employees.findByGiteaUsername(pr.path("user").path("login").asText(null)).ifPresent(a -> to.add(a.id()));
+            found.values().forEach(t -> to.add(t.assigneeId()));
+            String title = (ok ? "PR #" + number + " approved by " : "Changes requested on PR #" + number + " by ") + actor;
+            String link = found.isEmpty() ? "/" : "/tasks/" + found.keySet().iterator().next();
+            for (UUID id : to) {
+                if (id == null || id.equals(by)) continue;
+                employees.find(id).ifPresent(e -> notifications.notify(e.id(), e.email(), ok ? "PR_APPROVED" : "PR_CHANGES_REQUESTED", title,
+                        actor + (ok ? " approved " : " requested changes on ") + "\"" + pr.path("title").asText() + "\" in " + repo + ".", link));
+            }
         }
         return found.size();
     }
@@ -240,6 +268,19 @@ public class GiteaWebhookService {
         });
         l.updatedAt = Instant.now();
         return l;
+    }
+
+    private UUID actorId(JsonNode p) {
+        String login = p.path("sender").path("login").asText(p.path("pusher").path("login").asText(null));
+        return login == null ? null : employees.findByGiteaUsername(login).map(EmployeeView::id).orElse(null);
+    }
+
+    /** Notifies the task's assignee and reporter, except the person who did it. */
+    private void tell(TaskRef t, UUID by, String type, String title, String body) {
+        for (UUID id : new LinkedHashSet<>(Arrays.asList(t.assigneeId(), t.reporterId()))) {
+            if (id == null || id.equals(by)) continue;
+            employees.find(id).ifPresent(e -> notifications.notify(e.id(), e.email(), type, title, body, "/tasks/" + t.key()));
+        }
     }
 
     private String actor(JsonNode p) {

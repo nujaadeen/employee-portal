@@ -74,3 +74,12 @@ Left as is, with reasons:
 - Task detail "Activity" is newest first (server order); the screen mixes order.
 - AI header chip says "Simulated assistant · Phase 1" instead of "Ollama · local model".
 - "Schedule" is disabled with a Phase 2 hint.
+
+## Task and Gitea notifications
+Besides leave, these create a bell notification and send an email (Mailpit locally) through the same notification service. The person who caused the event is never notified.
+- Task assigned or reassigned (also at creation): the assignee.
+- Comment on a task: the assignee and the reporter.
+- Gitea review requested: the reviewer (matched by `gitea_username`).
+- Gitea review approved or changes requested: the PR author and the task's assignee. Plain review comments do not notify.
+- Pull request opened, or merged: the task's assignee and reporter. The text says when the task moved to In review or Done.
+Recipients without a matching portal person (for example a Gitea user whose `gitea_username` is not set) are skipped.

@@ -1,6 +1,7 @@
 package com.baracel.portal.task.service;
 
 import com.baracel.portal.common.security.CurrentUser;
+import com.baracel.portal.common.service.NotificationService;
 import com.baracel.portal.common.web.ApiException;
 import com.baracel.portal.employee.service.EmployeeService;
 import com.baracel.portal.employee.service.EmployeeView;
@@ -26,7 +27,7 @@ public class TaskService {
     public record TaskDetailDto(TaskView task, String projectKey, String description, UUID reporterId, String reporterName,
                                 String sprintName, List<SubtaskDto> subtasks, List<CommentDto> comments, List<ActivityDto> activity) {}
     public record BoardData(ProjectDto project, SprintDto sprint, List<SprintDto> sprints, List<TaskView> tasks) {}
-    public record TaskRef(Long id, String key, TaskStatus status, Long projectId, String title) {}
+    public record TaskRef(Long id, String key, TaskStatus status, Long projectId, String title, UUID assigneeId, UUID reporterId) {}
 
     public record CreateTask(String projectKey, String title, String description, Priority priority, UUID assigneeId,
                              LocalDate dueDate, String label, Long sprintId) {}
@@ -41,10 +42,12 @@ public class TaskService {
     private final TaskCommentRepository comments;
     private final TaskActivityRepository activities;
     private final EmployeeService employees;
+    private final NotificationService notifications;
 
     public TaskService(ProjectRepository projects, ProjectMemberRepository members, SprintRepository sprints, TaskRepository tasks,
                        SubtaskRepository subtasks, TaskCommentRepository comments, TaskActivityRepository activities,
-                       EmployeeService employees) {
+                       EmployeeService employees, NotificationService notifications) {
+        this.notifications = notifications;
         this.projects = projects;
         this.members = members;
         this.sprints = sprints;
@@ -117,6 +120,7 @@ public class TaskService {
         else sprints.findFirstByProjectIdAndActiveTrue(p.id).ifPresent(s -> t.sprintId = s.id);
         tasks.saveAndFlush(t);
         activity(t.id, me.employeeId(), me.name(), "CREATED", "created this task");
+        assigned(t, me);
         return views(List.of(t)).get(0);
     }
 
@@ -133,6 +137,7 @@ public class TaskService {
             requireMember(t.projectId, in.assigneeId());
             t.assigneeId = in.assigneeId();
             activity(t.id, me.employeeId(), me.name(), "ASSIGNEE", "assigned this to " + employees.require(in.assigneeId()).fullName());
+            assigned(t, me);
         }
         if (in.dueDate() != null) t.dueDate = in.dueDate();
         if (in.label() != null) t.label = in.label();
@@ -194,6 +199,11 @@ public class TaskService {
         c.body = body.trim();
         comments.save(c);
         activity(t.id, me.employeeId(), me.name(), "COMMENT", "commented: " + c.body);
+        for (UUID id : new LinkedHashSet<>(Arrays.asList(t.assigneeId, t.reporterId))) {
+            if (id == null || id.equals(me.employeeId())) continue;
+            employees.find(id).ifPresent(e -> notifications.notify(e.id(), e.email(), "TASK_COMMENT",
+                    me.name() + " commented on " + t.taskKey, c.body, "/tasks/" + t.taskKey));
+        }
         return new CommentDto(c.id, c.authorId, me.name(), c.body, c.createdAt);
     }
 
@@ -285,7 +295,14 @@ public class TaskService {
         activities.save(a);
     }
 
-    private static TaskRef ref(Task t) { return new TaskRef(t.id, t.taskKey, t.status, t.projectId, t.title); }
+    /** Tells the assignee about a new assignment. Nobody is notified about assigning a task to themselves. */
+    private void assigned(Task t, CurrentUser by) {
+        if (t.assigneeId == null || t.assigneeId.equals(by.employeeId())) return;
+        employees.find(t.assigneeId).ifPresent(e -> notifications.notify(e.id(), e.email(), "TASK_ASSIGNED",
+                t.taskKey + " was assigned to you", by.name() + " assigned you \"" + t.title + "\".", "/tasks/" + t.taskKey));
+    }
+
+    private static TaskRef ref(Task t) { return new TaskRef(t.id, t.taskKey, t.status, t.projectId, t.title, t.assigneeId, t.reporterId); }
 
     private ProjectDto projectDto(Project p) {
         return new ProjectDto(p.id, p.key, p.name, members.findByIdProjectId(p.id).size(),
