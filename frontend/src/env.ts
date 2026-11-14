@@ -3,4 +3,3 @@ export const env = {
   oidcAuthority: import.meta.env.VITE_OIDC_AUTHORITY ?? 'http://localhost:8180/realms/baracel',
   oidcClientId: import.meta.env.VITE_OIDC_CLIENT_ID ?? 'portal-web',
 }
-export const giteaUrl = import.meta.env.VITE_GITEA_URL ?? 'http://localhost:3000'

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { api, unwrap } from '@/api/client'
 import type { Board as BoardData, TaskCard } from '@/api/types'
 import { Can, usePermissions } from '@/auth/me'
-import { giteaUrl } from '@/env'
+import { useConfig } from '@/config'
 import { longRange, plural, timeAgo, weekdayDate } from '@/lib/format'
 import { Button } from '@/ui/Button'
 import { Card } from '@/ui/Card'
@@ -58,6 +58,7 @@ function Timeline({ board }: { board: BoardData }) {
 }
 
 export function TasksPage() {
+  const config = useConfig()
   const { me, has } = usePermissions()
   // HR and administrators manage any project, managers the projects they belong to. The server decides; this only hides the buttons.
   const canManageMembers = has('employee:manage') || has('access:manage') || has('employee:team')
@@ -82,7 +83,6 @@ export function TasksPage() {
   const sprint = b?.sprint
   const title = sprint ? `${sprint.name} · ${b?.project?.name}` : (b?.project?.name ?? 'Tasks')
   const sub = b ? `${sprint ? `${longRange(sprint.startsOn, sprint.endsOn)} · ` : ''}${plural(b.taskCount ?? 0, 'task')} · ${b.linkedToGitea} linked to Gitea` : undefined
-  const host = new URL(giteaUrl).host
   return (
     <>
       <PageHeader title={title} subtitle={sub}
@@ -97,7 +97,7 @@ export function TasksPage() {
         {(b?.sprints?.length ?? 0) > 1 ? <Select label="Sprint" value={sprintId || String(sprint?.id ?? '')} onChange={(e) => setSprintId(e.target.value)} options={(b?.sprints ?? []).map((s) => ({ value: String(s.id), label: s.name }))} /> : null}
         <span className="grow" />
         {b?.lastSyncedAt ? <span className="muted">Synced with Gitea {timeAgo(b.lastSyncedAt)}</span> : null}
-        <StatusPill tone="success"><Check size={14} aria-hidden="true" /> {host}</StatusPill>
+        {config.data ? <StatusPill tone="success"><Check size={14} aria-hidden="true" /> {new URL(config.data.giteaUrl).host}</StatusPill> : null}
       </div>
       {board.isPending || projects.isPending ? <SkeletonRows rows={6} label="Loading board" /> : board.isError ? (
         <ErrorPage message={board.error.message} onRetry={() => { void board.refetch() }} />

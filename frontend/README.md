@@ -12,7 +12,7 @@ npm run e2e        # Playwright against the running stack (see docs/run.md); scr
 npm run api:types  # regenerate src/api/schema.d.ts from ../docs/openapi.json
 ```
 
-Environment (`.env.example`): `VITE_API_URL`, `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_GITEA_URL`. Defaults equal the example, so `.env` is optional.
+Environment (`.env.example`): `VITE_API_URL`, `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`. The Gitea address comes from `GET /api/config`. Defaults equal the example, so `.env` is optional.
 
 ## Layout
 - `src/ui/` shared components, one per file (AppShell, Card, Button, Modal ...). `/styleguide` (dev only) shows all of them.

@@ -5,6 +5,7 @@ import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api, ApiError, unwrap } from '@/api/client'
 import { Can } from '@/auth/me'
+import { giteaLink, useConfig } from '@/config'
 import { activityTime, plural, timeAgo, toIso, weekdayDate } from '@/lib/format'
 import { Avatar } from '@/ui/Avatar'
 import { Button } from '@/ui/Button'
@@ -29,6 +30,8 @@ export function TaskDetailPage() {
   const [link, setLink] = useState(false)
   const [sub, setSub] = useState('')
   const [comment, setComment] = useState('')
+  const config = useConfig()
+  const gitea = config.data?.giteaUrl
   const q = useQuery({ queryKey: ['task', key], queryFn: () => unwrap(api.GET('/api/tasks/{key}', { params: { path: { key } } })) })
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['task', key] }); void qc.invalidateQueries({ queryKey: ['board'] }); void qc.invalidateQueries({ queryKey: ['dashboard'] }) }
   const status = useMutation({ mutationFn: (s: 'BACKLOG' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE') => unwrap(api.PATCH('/api/tasks/{key}/status', { params: { path: { key } }, body: { status: s } })), onSuccess: refresh })
@@ -122,7 +125,7 @@ export function TaskDetailPage() {
                 {prLinks.map((l) => (
                   <div key={l.prNumber}>
                     <div className="muted">Pull request</div>
-                    <strong>{l.prUrl ? <a href={l.prUrl}>#{l.prNumber} {l.prTitle}</a> : `#${l.prNumber} ${l.prTitle}`}</strong>
+                    <strong>{gitea ? <a href={giteaLink(gitea, `${l.repo}/pulls/${l.prNumber}`)}>#{l.prNumber} {l.prTitle}</a> : `#${l.prNumber} ${l.prTitle}`}</strong>
                     <div style={{ marginTop: 'var(--space-2)' }} className="row">
                       {l.checksStatus ? <StatusPill tone={l.checksStatus === 'PASSING' ? 'success' : l.checksStatus === 'FAILING' ? 'danger' : 'warning'}>{l.checksStatus === 'PASSING' ? <><Check size={12} aria-hidden="true" /> Checks passing</> : l.checksStatus === 'FAILING' ? 'Checks failing' : 'Checks pending'}</StatusPill> : null}
                       <StatusPill tone={l.prState === 'MERGED' ? 'success' : 'info'}>{l.prState === 'MERGED' ? 'Merged' : l.prState === 'CLOSED' ? 'Closed' : 'Open'}</StatusPill>
@@ -132,13 +135,13 @@ export function TaskDetailPage() {
                 {commits.length ? (
                   <div><div className="muted" style={{ marginBottom: 'var(--space-2)' }}>Recent commits</div>
                     <ul className="plain-list">{commits.map((c) => (
-                      <li key={c.sha} className="commit"><a className="mono commit__sha" href={c.url ?? undefined}>{c.shortSha}</a>
+                      <li key={c.sha} className="commit"><a className="mono commit__sha" href={giteaLink(gitea, `${mainLink?.repo ?? ''}/commit/${c.sha}`)}>{c.shortSha}</a>
                         <div><div>{c.message}</div><div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{c.author} · {timeAgo(c.committedAt)}</div></div></li>))}</ul></div>
                 ) : null}
               </div>
             )}
             <div className="row" style={{ marginTop: 'var(--space-4)', flexWrap: 'wrap' }}>
-              {mainLink ? <a className="btn btn--secondary" href={mainLink.prUrl ?? mainLink.repoUrl ?? git.baseUrl ?? '#'}><ArrowRight size={18} aria-hidden="true" /> Open in Gitea</a> : null}
+              {mainLink && gitea ? <a className="btn btn--secondary" href={giteaLink(gitea, mainLink.prNumber ? `${mainLink.repo}/pulls/${mainLink.prNumber}` : mainLink.repo)}><ArrowRight size={18} aria-hidden="true" /> Open in Gitea</a> : null}
               <Can permission="task:edit"><Button icon={<Plus size={18} />} onClick={() => setLink(true)}>Link {prLinks.length ? 'another ' : 'a '}PR</Button></Can>
             </div>
           </Card>

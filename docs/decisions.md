@@ -69,7 +69,7 @@ Left as is, with reasons:
 - Dummy data differs (13 people not 48, today's real date, different task assignees, "Overdue" instead of "Due today"). The code does what the data says.
 - Team table order is the server's (by first name), screen 05 lists Karim before Hana.
 - Login tabs are 44px high (touch target rule), the PNG shows 40px. The login email and password fields are empty, the PNG shows demo values.
-- Screen 04 shows "Reset access", screen 09 "New role", the board "gitea.baracel.internal": no backend endpoint (see docs/backend-gaps.md). The Gitea chip shows the host of VITE_GITEA_URL.
+- Screen 04 shows "Reset access", screen 09 "New role", the board "gitea.baracel.internal": no backend endpoint (see docs/backend-gaps.md). (Update: now fixed, the chip shows the host of `giteaUrl` from `GET /api/config`.)
 - Matrix has extra rows the screen does not have (HR records, one row per knowledge collection, Roles and access) because each is a real permission.
 - Task detail "Activity" is newest first (server order); the screen mixes order.
 - AI header chip says "Simulated assistant · Phase 1" instead of "Ollama · local model".
