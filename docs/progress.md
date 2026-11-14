@@ -12,3 +12,14 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 6. Tests (Vitest, Playwright)
 - [x] 7. Visual check
 - [x] 8. Docs
+
+## Prompt 03 (backend gaps)
+- [x] 1. Project members
+- [ ] 2. Project repositories
+- [ ] 3. Public config
+- [ ] 4. Reset access and New role
+- [ ] 5. Notifications paging and read-all
+- [ ] 6. MFA state enum
+- [ ] 7. Required fields in the contract
+- [ ] 8. Activity order
+- [ ] Docs: api.md, openapi.json, backend-gaps.md, mvn verify

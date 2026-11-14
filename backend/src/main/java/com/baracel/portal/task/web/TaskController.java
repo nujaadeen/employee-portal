@@ -52,6 +52,25 @@ public class TaskController {
     @PreAuthorize("hasAuthority('task:view')")
     public List<ProjectDto> projects(CurrentUser me) { return service.projectsFor(me); }
 
+    public record AddMemberRequest(@NotNull UUID employeeId) {}
+
+    @GetMapping("/api/projects/{key}/members")
+    @PreAuthorize("hasAuthority('task:view')")
+    public List<MemberDto> members(CurrentUser me, @PathVariable String key) { return service.members(me, key); }
+
+    @PostMapping("/api/projects/{key}/members")
+    @PreAuthorize("hasAnyAuthority('employee:manage', 'access:manage', 'employee:team')")
+    public ResponseEntity<List<MemberDto>> addMember(CurrentUser me, @PathVariable String key, @Valid @RequestBody AddMemberRequest body) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.addMember(me, key, body.employeeId()));
+    }
+
+    @DeleteMapping("/api/projects/{key}/members/{employeeId}")
+    @PreAuthorize("hasAnyAuthority('employee:manage', 'access:manage', 'employee:team')")
+    public ResponseEntity<Void> removeMember(CurrentUser me, @PathVariable String key, @PathVariable UUID employeeId) {
+        service.removeMember(me, key, employeeId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/api/projects/{key}/board")
     @PreAuthorize("hasAuthority('task:view')")
     public Board board(CurrentUser me, @PathVariable String key, @RequestParam(required = false) Long sprint) {

@@ -1,6 +1,7 @@
 package com.baracel.portal.task.service;
 
 import com.baracel.portal.common.security.CurrentUser;
+import com.baracel.portal.common.service.AuditService;
 import com.baracel.portal.common.service.NotificationService;
 import com.baracel.portal.common.web.ApiException;
 import com.baracel.portal.employee.service.EmployeeService;
@@ -29,6 +30,8 @@ public class TaskService {
     public record BoardData(ProjectDto project, SprintDto sprint, List<SprintDto> sprints, List<TaskView> tasks) {}
     public record TaskRef(Long id, String key, TaskStatus status, Long projectId, String title, UUID assigneeId, UUID reporterId) {}
 
+    public record MemberDto(UUID id, String name, String jobTitle, String initials) {}
+
     public record CreateTask(String projectKey, String title, String description, Priority priority, UUID assigneeId,
                              LocalDate dueDate, String label, Long sprintId) {}
     public record UpdateTask(String title, String description, Priority priority, UUID assigneeId, LocalDate dueDate,
@@ -43,11 +46,13 @@ public class TaskService {
     private final TaskActivityRepository activities;
     private final EmployeeService employees;
     private final NotificationService notifications;
+    private final AuditService audit;
 
     public TaskService(ProjectRepository projects, ProjectMemberRepository members, SprintRepository sprints, TaskRepository tasks,
                        SubtaskRepository subtasks, TaskCommentRepository comments, TaskActivityRepository activities,
-                       EmployeeService employees, NotificationService notifications) {
+                       EmployeeService employees, NotificationService notifications, AuditService audit) {
         this.notifications = notifications;
+        this.audit = audit;
         this.projects = projects;
         this.members = members;
         this.sprints = sprints;
@@ -155,6 +160,54 @@ public class TaskService {
         }
         return views(List.of(t)).get(0);
     }
+
+    // ---- project members ----
+
+    @Transactional(readOnly = true)
+    public List<MemberDto> members(CurrentUser me, String key) {
+        Project p = memberProject(me, key);
+        return memberDtos(p.id);
+    }
+
+    /** HR and administrators (employee:manage) may manage any project; a manager only a project they are a member of. */
+    @Transactional
+    public List<MemberDto> addMember(CurrentUser me, String key, UUID employeeId) {
+        Project p = manageableProject(me, key);
+        EmployeeView person = employees.require(employeeId);
+        if (members.existsByIdProjectIdAndIdEmployeeId(p.id, employeeId))
+            throw ApiException.conflict("already-a-member", person.fullName() + " is already a member of " + p.key + ".");
+        members.save(new ProjectMember(new ProjectMemberId(p.id, employeeId)));
+        audit.log(me, "PROJECT_MEMBER_ADDED", "project", p.key, person.code() + " " + person.fullName());
+        return memberDtos(p.id);
+    }
+
+    @Transactional
+    public void removeMember(CurrentUser me, String key, UUID employeeId) {
+        Project p = manageableProject(me, key);
+        ProjectMemberId id = new ProjectMemberId(p.id, employeeId);
+        if (!members.existsById(id)) throw ApiException.notFound("That person is not a member of " + p.key + ".");
+        EmployeeView person = employees.require(employeeId);
+        members.deleteById(id);
+        audit.log(me, "PROJECT_MEMBER_REMOVED", "project", p.key, person.code() + " " + person.fullName());
+    }
+
+    private Project manageableProject(CurrentUser me, String key) {
+        Project p = projects.findByKeyIgnoreCase(key).orElseThrow(() -> ApiException.notFound("Project not found"));
+        boolean admin = me.has("employee:manage") || me.has("access:manage");
+        boolean memberManager = me.has("employee:team") && members.existsByIdProjectIdAndIdEmployeeId(p.id, me.employeeId());
+        if (!admin && !memberManager) throw ApiException.forbidden("Only HR, administrators and managers who are in this project can change its members.");
+        return p;
+    }
+
+    private List<MemberDto> memberDtos(Long projectId) {
+        Map<UUID, EmployeeView> people = employees.views(members.findByIdProjectId(projectId).stream().map(m -> m.id.employeeId()).toList());
+        return people.values().stream().sorted(Comparator.comparing(EmployeeView::fullName))
+                .map(v -> new MemberDto(v.id(), v.fullName(), v.jobTitle(), v.initials())).toList();
+    }
+
+    /** The project id when the caller is a member (404 otherwise). */
+    @Transactional(readOnly = true)
+    public Long memberProjectId(CurrentUser me, String key) { return memberProject(me, key).id; }
 
     // ---- subtasks and comments ----
 
