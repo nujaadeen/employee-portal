@@ -36,7 +36,7 @@ export function AiPage() {
   const send = useMutation({
     mutationFn: async (message: string) => {
       let cid = id
-      if (!cid) cid = (await unwrap(api.POST('/api/ai/conversations', { body: {} }))).id!
+      if (!cid) cid = (await unwrap(api.POST('/api/ai/conversations', { body: {} }))).id
       await unwrap(api.POST('/api/ai/conversations/{id}/messages', { params: { path: { id: cid } }, body: { message } }))
       return cid
     },
@@ -53,7 +53,7 @@ export function AiPage() {
 
   const today = new Date().toDateString()
   const convs = list.data ?? []
-  const groups = [['Today', convs.filter((c) => dayKey(c.updatedAt!) === today)], ['Earlier', convs.filter((c) => dayKey(c.updatedAt!) !== today)]] as const
+  const groups = [['Today', convs.filter((c) => dayKey(c.updatedAt) === today)], ['Earlier', convs.filter((c) => dayKey(c.updatedAt) !== today)]] as const
   const a = access.data
   const PORTAL_ROLES = ['MANAGER', 'HR', 'SALES', 'ENGINEER', 'ADMIN']
   const myRoles = (a?.roles ?? []).filter((r) => PORTAL_ROLES.includes(r))
@@ -84,7 +84,7 @@ export function AiPage() {
                 <p>{m.content}</p>
                 {m.draft ? (<>
                   <DraftCard draft={m.draft} sources={m.sources ?? []} />
-                  <PublishPanel key={a ? 'ready' : 'wait'} draftId={m.draft.id!} suggested={m.draft.suggestedChannels ?? []} access={a} onEdit={() => { setText('Change the tone of this draft: '); inputRef.current?.focus() }} />
+                  <PublishPanel key={a ? 'ready' : 'wait'} draftId={m.draft.id} suggested={m.draft.suggestedChannels ?? []} access={a} onEdit={() => { setText('Change the tone of this draft: '); inputRef.current?.focus() }} />
                 </>) : <Sources sources={m.sources ?? []} />}
               </div>
             </div>

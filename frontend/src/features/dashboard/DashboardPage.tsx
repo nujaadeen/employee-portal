@@ -45,7 +45,7 @@ export function DashboardPage() {
     <>
       <PageHeader
         title={d ? `${greeting(new Date().getHours())}, ${d.firstName}` : 'Dashboard'}
-        subtitle={d ? `${longDate(d.today!)}${d.department ? ` · ${d.department} team` : ''}` : <Skeleton width={220} height={14} />}
+        subtitle={d ? `${longDate(d.today)}${d.department ? ` · ${d.department} team` : ''}` : <Skeleton width={220} height={14} />}
         actions={<Can permission="leave:request"><Button variant="primary" to="/leave" icon={<Plus size={18} />}>Request leave</Button></Can>}
       />
       <div className="grid dash-stats">
@@ -64,14 +64,14 @@ export function DashboardPage() {
             <EmptyState icon={<SquareCheck size={24} />} title="No tasks due">Tasks assigned to you with a due date show up here.</EmptyState>
           ) : (
             <ul className="plain-list">
-              {d!.nextDue!.map((t) => {
-                const overdue = t.dueDate! < today
+              {d!.nextDue.map((t) => {
+                const overdue = t.dueDate < today
                 const st = STATUS[t.status ?? 'BACKLOG']!
                 return (
                   <li key={t.key} className="dash-task">
                     <Link to={`/tasks/${t.key}`} className="mono dash-task__key">{t.key}</Link>
                     <span className="grow dash-task__title">{t.title}</span>
-                    <span className="muted dash-task__due">{dueLabel(t.dueDate!, today) === 'Today' ? weekdayDate(t.dueDate!) : weekdayDate(t.dueDate!)}</span>
+                    <span className="muted dash-task__due">{dueLabel(t.dueDate, today) === 'Today' ? weekdayDate(t.dueDate) : weekdayDate(t.dueDate)}</span>
                     {t.dueDate === today ? <StatusPill tone="danger">Due today</StatusPill>
                       : overdue ? <StatusPill tone="danger">Overdue</StatusPill> : <StatusPill tone={st.tone}>{st.label}</StatusPill>}
                   </li>
@@ -88,10 +88,10 @@ export function DashboardPage() {
             <ul className="plain-list">
               {out.map((o) => (
                 <li key={o.employeeId} className="row" style={{ padding: 'var(--space-2) 0' }}>
-                  <Avatar name={o.name!} />
+                  <Avatar name={o.name} />
                   <div>
                     <strong>{o.name}</strong>
-                    <div className="muted">{o.typeName} leave · back {weekdayDate(o.backOn!)}</div>
+                    <div className="muted">{o.typeName} leave · back {weekdayDate(o.backOn)}</div>
                   </div>
                 </li>
               ))}
@@ -104,10 +104,10 @@ export function DashboardPage() {
             <EmptyState title="No announcements">Company news from HR and Engineering shows up here.</EmptyState>
           ) : (
             <ul className="plain-list">
-              {d!.announcements!.map((a) => (
+              {d!.announcements.map((a) => (
                 <li key={a.id} className="dash-news">
                   <strong>{a.title}</strong>
-                  <div className="muted">Posted by {a.postedBy} · {timeAgo(a.createdAt!)}</div>
+                  <div className="muted">Posted by {a.postedBy} · {timeAgo(a.createdAt)}</div>
                 </li>
               ))}
             </ul>
@@ -125,7 +125,7 @@ export function DashboardPage() {
           </Card>
         </Can>
       </div>
-      <p className="sr-only">Updated {d ? shortDate(d.today!) : ''}. {plural(out.length, 'person')} out today.</p>
+      <p className="sr-only">Updated {d ? shortDate(d.today) : ''}. {plural(out.length, 'person')} out today.</p>
     </>
   )
 }

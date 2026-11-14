@@ -43,13 +43,13 @@ export function NotificationBell() {
           <h2 className="card__title" style={{ marginBottom: 'var(--space-3)' }}>Notifications</h2>
           {list.isPending ? <SkeletonRows rows={3} label="Loading notifications" /> : list.isError ? (
             <p className="note note--danger" role="alert">Could not load notifications.</p>
-          ) : list.data.length === 0 ? (
+          ) : list.data.items.length === 0 ? (
             <EmptyState title="You are all caught up">New requests and decisions show up here.</EmptyState>
           ) : (
             <ul className="bell__list">
-              {list.data.map((n) => (
+              {list.data.items.map((n) => (
                 <li key={n.id}>
-                  <button type="button" className="bell__item" data-unread={!n.read} onClick={() => { if (!n.read) read.mutate(n.id!) }}>
+                  <button type="button" className="bell__item" data-unread={!n.read} onClick={() => { if (!n.read) read.mutate(n.id) }}>
                     <strong>{n.title}</strong>
                     <span className="muted">{n.body}</span>
                     <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>{ago(n.createdAt ?? '')}{n.read ? '' : ' · unread'}</span>

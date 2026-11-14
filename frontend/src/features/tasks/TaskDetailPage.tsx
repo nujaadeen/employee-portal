@@ -38,7 +38,7 @@ export function TaskDetailPage() {
 
   if (q.isError) return q.error instanceof ApiError && q.error.status === 404 ? <NotFound /> : <ErrorPage message={q.error.message} onRetry={() => { void q.refetch() }} />
   if (q.isPending) return <><PageHeader title={key} /><Card as="div"><SkeletonRows rows={6} label="Loading task" /></Card></>
-  const d = q.data.task!, git = q.data.git!, t = d.task!
+  const d = q.data.task, git = q.data.git, t = d.task
   const st = statusInfo(t.status), next = nextStatus(t.status), nextInfo = next ? statusInfo(next) : null
   const links = git.links ?? [], commits = git.commits ?? []
   const prLinks = links.filter((l) => l.prNumber)
@@ -48,7 +48,7 @@ export function TaskDetailPage() {
 
   return (
     <>
-      <PageHeader title={t.key!} bell={false}
+      <PageHeader title={t.key} bell={false}
         crumbs={<><Link to="/tasks">{d.sprintName ?? 'Tasks'}</Link><span aria-hidden="true">&gt;</span><span className="mono">{t.key}</span></>}
         subtitle={`Linked to ${plural(repos.length, 'repository', 'repositories')}, ${plural(prLinks.length, 'pull request')} and ${plural(commits.length, 'commit')}`}
         actions={<Can permission="task:edit">
@@ -67,11 +67,11 @@ export function TaskDetailPage() {
           <Card title="Subtasks" action={<span className="muted">{done} of {(d.subtasks ?? []).length} done</span>}>
             {(d.subtasks ?? []).length === 0 ? <p className="muted">No subtasks yet.</p> : (
               <ul className="plain-list">
-                {d.subtasks!.map((s) => (
+                {d.subtasks.map((s) => (
                   <li key={s.id} className="subtask">
                     <label className="subtask__label">
                       <input type="checkbox" className="subtask__box" checked={!!s.done} disabled={toggle.isPending}
-                        onChange={(e) => toggle.mutate({ id: s.id!, done: e.target.checked })} />
+                        onChange={(e) => toggle.mutate({ id: s.id, done: e.target.checked })} />
                       <span className={s.done ? 'subtask__done' : ''}>{s.title}</span>
                     </label>
                   </li>
@@ -90,8 +90,8 @@ export function TaskDetailPage() {
             <ul className="plain-list">
               {(d.activity ?? []).map((a) => (
                 <li key={a.id} className="activity">
-                  <Avatar name={a.actor!} size="sm" />
-                  <div><span><strong>{a.actor}</strong> <span className="muted">{a.message}</span></span><div className="muted activity__time">{activityTime(a.createdAt!)}</div></div>
+                  <Avatar name={a.actor} size="sm" />
+                  <div><span><strong>{a.actor}</strong> <span className="muted">{a.message}</span></span><div className="muted activity__time">{activityTime(a.createdAt)}</div></div>
                 </li>
               ))}
             </ul>
@@ -133,7 +133,7 @@ export function TaskDetailPage() {
                   <div><div className="muted" style={{ marginBottom: 'var(--space-2)' }}>Recent commits</div>
                     <ul className="plain-list">{commits.map((c) => (
                       <li key={c.sha} className="commit"><a className="mono commit__sha" href={c.url ?? undefined}>{c.shortSha}</a>
-                        <div><div>{c.message}</div><div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{c.author} · {timeAgo(c.committedAt!)}</div></div></li>))}</ul></div>
+                        <div><div>{c.message}</div><div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{c.author} · {timeAgo(c.committedAt)}</div></div></li>))}</ul></div>
                 ) : null}
               </div>
             )}

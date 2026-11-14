@@ -10,10 +10,10 @@ export function buildMatrix(perms: NonNullable<RoleMatrix['permissions']>): Matr
   const groups: MatrixGroup[] = []
   for (const p of perms) {
     let g = groups.find((x) => x.name === p.group)
-    if (!g) { g = { name: p.group!, rows: [] }; groups.push(g) }
+    if (!g) { g = { name: p.group, rows: [] }; groups.push(g) }
     let r = g.rows.find((x) => x.label === p.row)
-    if (!r) { r = { label: p.row!, hint: p.hint ?? '', cells: {} }; g.rows.push(r) }
-    r.cells[p.column as Column] = { key: p.key! }
+    if (!r) { r = { label: p.row, hint: p.hint ?? '', cells: {} }; g.rows.push(r) }
+    r.cells[p.column as Column] = { key: p.key }
   }
   return groups
 }

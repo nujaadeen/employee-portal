@@ -9,7 +9,7 @@ const MAP: Record<string, { label: string; tone: Tone }> = {
   DEACTIVATED: { label: 'Deactivated', tone: 'neutral' },
 }
 
-export function EmployeeStatus({ status }: { status?: string }) {
+export function EmployeeStatus({ status }: { status?: string | null }) {
   const m = MAP[status ?? ''] ?? { label: status ?? '', tone: 'neutral' as Tone }
   return <StatusPill tone={m.tone}>{m.label}</StatusPill>
 }

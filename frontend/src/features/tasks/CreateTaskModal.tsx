@@ -32,7 +32,7 @@ export function CreateTaskModal({ open, onClose, projectKey }: { open: boolean; 
         <div className="row" style={{ alignItems: 'flex-start' }}>
           <Field className="grow" label="Due date" type="date" value={f.dueDate} onChange={set('dueDate')} />
           <Select className="grow" label="Assignee" value={f.assigneeId} onChange={set('assigneeId')} placeholder="Unassigned"
-            options={(people.data?.items ?? []).map((p) => ({ value: p.id!, label: p.name! }))} error={err?.slug === 'not-a-member' ? err.message : null} />
+            options={(people.data?.items ?? []).map((p) => ({ value: p.id, label: p.name }))} error={err?.slug === 'not-a-member' ? err.message : null} />
         </div>
         {err && !['validation', 'not-a-member'].includes(err.slug) ? <p className="field__error" role="alert">{err.message}</p> : null}
       </form>

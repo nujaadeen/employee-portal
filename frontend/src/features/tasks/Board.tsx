@@ -25,17 +25,17 @@ export function moveCard(board: BoardData, key: string, to: TaskStatus): BoardDa
 }
 
 export function TaskCardView({ card, today, onMove, grabbed }: { card: TaskCard; today: string; onMove: (key: string, to: TaskStatus) => void; grabbed?: boolean }) {
-  const t = card.task!
+  const t = card.task
   const idx = STATUSES.findIndex((s) => s.value === t.status)
   function onKey(e: KeyboardEvent) {
     if (!e.altKey) return
     const to = STATUSES[idx + (e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0)]
-    if (to && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); onMove(t.key!, to.value) }
+    if (to && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); onMove(t.key, to.value) }
   }
   const due = t.dueDate ? (t.dueDate === today ? 'Today' : t.status === 'DONE' ? shortDate(t.dueDate) : weekdayDate(t.dueDate)) : null
   return (
     <article className="task-card" draggable data-grabbed={grabbed} onKeyDown={onKey}
-      onDragStart={(e: DragEvent) => { e.dataTransfer.setData('text/plain', t.key!); e.dataTransfer.effectAllowed = 'move' }}>
+      onDragStart={(e: DragEvent) => { e.dataTransfer.setData('text/plain', t.key); e.dataTransfer.effectAllowed = 'move' }}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <span className="mono muted" style={{ fontSize: 'var(--text-xs)' }}>{t.key}</span>
         {t.label ? <StatusPill tone={LABEL_TONE[t.label] ?? 'neutral'}>{t.label}</StatusPill> : null}
@@ -84,7 +84,7 @@ export function Board({ board, boardKey, mine, meId }: { board: BoardData; board
               onDrop={(e) => { e.preventDefault(); const key = e.dataTransfer.getData('text/plain'); if (key) move(key, col.status as TaskStatus) }}>
               <header className="board__head"><span className="label-caps">{col.label}</span><span className="label-caps">{cards.length}</span></header>
               <div className="board__cards">
-                {cards.map((c) => <TaskCardView key={c.task!.key} card={c} today={today} onMove={move} />)}
+                {cards.map((c) => <TaskCardView key={c.task.key} card={c} today={today} onMove={move} />)}
                 {cards.length === 0 ? <p className="muted board__empty">No tasks</p> : null}
               </div>
             </section>

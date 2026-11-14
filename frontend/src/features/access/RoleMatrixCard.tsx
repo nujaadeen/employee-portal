@@ -13,8 +13,8 @@ export function RoleMatrixCard({ role }: { role: string }) {
   const q = useQuery({ queryKey: ['access', 'matrix', role], queryFn: () => unwrap(api.GET('/api/access/roles/{role}/matrix', { params: { path: { role } } })) })
   // Everyone also holds EMPLOYEE, so its permissions show as inherited (ticked, not editable here).
   const base = useQuery({ queryKey: ['access', 'matrix', 'EMPLOYEE'], enabled: role !== 'EMPLOYEE', queryFn: () => unwrap(api.GET('/api/access/roles/{role}/matrix', { params: { path: { role: 'EMPLOYEE' } } })) })
-  const inherited = useMemo(() => new Set(role === 'EMPLOYEE' ? [] : (base.data?.permissions ?? []).filter((p) => p.granted).map((p) => p.key!)), [base.data, role])
-  const server = useMemo(() => new Set((q.data?.permissions ?? []).filter((p) => p.granted).map((p) => p.key!)), [q.data])
+  const inherited = useMemo(() => new Set(role === 'EMPLOYEE' ? [] : (base.data?.permissions ?? []).filter((p) => p.granted).map((p) => p.key)), [base.data, role])
+  const server = useMemo(() => new Set((q.data?.permissions ?? []).filter((p) => p.granted).map((p) => p.key)), [q.data])
   const [edits, setEdits] = useState<{ role: string; set: Set<string> } | null>(null)
   const granted = edits && edits.role === role ? edits.set : server
   const dirty = granted.size !== server.size || [...granted].some((k) => !server.has(k))

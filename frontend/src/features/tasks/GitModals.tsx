@@ -12,7 +12,7 @@ function RepoField({ value, onChange, error }: { value: string; onChange: (v: st
   const canList = usePermission('repo:view')
   const repos = useQuery({ queryKey: ['repos'], enabled: canList, queryFn: () => unwrap(api.GET('/api/repos')) })
   if (canList && (repos.data?.length ?? 0) > 0)
-    return <Select label="Repository" value={value} onChange={(e) => onChange(e.target.value)} options={repos.data!.map((r) => ({ value: r.fullName!, label: r.fullName! }))} placeholder="Choose a repository" error={error} />
+    return <Select label="Repository" value={value} onChange={(e) => onChange(e.target.value)} options={(repos.data ?? []).map((r) => ({ value: r.fullName, label: r.fullName }))} placeholder="Choose a repository" error={error} />
   return <Field label="Repository" value={value} onChange={(e) => onChange(e.target.value)} placeholder="owner/name" hint="For example baracel/otp-service" error={error} />
 }
 

@@ -19,7 +19,7 @@ function useRoleOptions() {
 
 function useManagerOptions() {
   const q = useQuery({ queryKey: ['employees', 'directory', 'managers'], queryFn: () => unwrap(api.GET('/api/employees', { params: { query: { scope: 'directory', size: 100 } } })) })
-  return (q.data?.items ?? []).map((e) => ({ value: e.id!, label: `${e.name}${e.jobTitle ? ` · ${e.jobTitle}` : ''}` }))
+  return (q.data?.items ?? []).map((e) => ({ value: e.id, label: `${e.name}${e.jobTitle ? ` · ${e.jobTitle}` : ''}` }))
 }
 
 function errText(e: unknown) { return e instanceof ApiError ? e.message : e ? 'Something went wrong.' : null }
@@ -56,7 +56,7 @@ export function ApproveModal({ person, onClose }: { person: EmployeeItem | null;
   const roles = useRoleOptions(); const managers = useManagerOptions(); const refresh = useRefresh()
   const [role, setRole] = useState('EMPLOYEE'); const [managerId, setManagerId] = useState('')
   const m = useMutation({
-    mutationFn: () => unwrap(api.POST('/api/employees/{id}/approve', { params: { path: { id: person!.id! } }, body: { role, managerId: managerId || undefined } })),
+    mutationFn: () => unwrap(api.POST('/api/employees/{id}/approve', { params: { path: { id: person!.id } }, body: { role, managerId: managerId || undefined } })),
     onSuccess: () => { refresh(); onClose() },
   })
   return (
@@ -76,7 +76,7 @@ export function EditModal({ person, onClose }: { person: EmployeeItem | null; on
   const [f, setF] = useState({ jobTitle: person?.jobTitle ?? '', department: person?.department ?? '', location: person?.location ?? '', phone: person?.phone ?? '', giteaUsername: person?.giteaUsername ?? '', managerId: person?.managerId ?? '', status: person?.status ?? 'ACTIVE' })
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
   const m = useMutation({
-    mutationFn: () => unwrap(api.PATCH('/api/employees/{id}', { params: { path: { id: person!.id! } }, body: { ...f, managerId: f.managerId || undefined, status: f.status as 'ACTIVE' } })),
+    mutationFn: () => unwrap(api.PATCH('/api/employees/{id}', { params: { path: { id: person!.id } }, body: { ...f, managerId: f.managerId || undefined, status: f.status as 'ACTIVE' } })),
     onSuccess: () => { refresh(); onClose() },
   })
   if (!person) return null

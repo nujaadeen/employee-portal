@@ -17,7 +17,7 @@ export function MyRequests() {
   const [cancelling, setCancelling] = useState<LeaveRequest | null>(null)
   const q = useQuery({ queryKey: ['leave', 'mine'], queryFn: () => unwrap(api.GET('/api/leave/requests', { params: { query: { scope: 'mine' } } })) })
   const cancel = useMutation({
-    mutationFn: (r: LeaveRequest) => unwrap(api.DELETE('/api/leave/requests/{id}', { params: { path: { id: r.id! } } })),
+    mutationFn: (r: LeaveRequest) => unwrap(api.DELETE('/api/leave/requests/{id}', { params: { path: { id: r.id } } })),
     onSuccess: () => { setCancelling(null); void qc.invalidateQueries({ queryKey: ['leave'] }) },
   })
   const rows = q.data ?? []
@@ -28,8 +28,8 @@ export function MyRequests() {
           <ul className="plain-list">
             {rows.map((r) => (
               <li key={r.id} className="row my-req">
-                <div className="grow"><strong>{r.typeName} · {dateRange(r.from!, r.to!)}</strong><div className="muted">{r.days} working days{r.note ? ` · ${r.note}` : ''}</div></div>
-                <StatusPill tone={LEAVE_TONE[r.status!]!.tone}>{LEAVE_TONE[r.status!]!.label}</StatusPill>
+                <div className="grow"><strong>{r.typeName} · {dateRange(r.from, r.to)}</strong><div className="muted">{r.days} working days{r.note ? ` · ${r.note}` : ''}</div></div>
+                <StatusPill tone={LEAVE_TONE[r.status]!.tone}>{LEAVE_TONE[r.status]!.label}</StatusPill>
                 {r.status === 'PENDING' ? <Button onClick={() => setCancelling(r)}>Cancel</Button> : null}
               </li>
             ))}

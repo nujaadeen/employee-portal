@@ -17,7 +17,7 @@ export function PublishPanel({ draftId, suggested, access, onEdit }: { draftId: 
   const [result, setResult] = useState<string[] | null>(null)
   const m = useMutation({
     mutationFn: () => unwrap(api.POST('/api/ai/drafts/{id}/publish', { params: { path: { id: draftId } }, body: { channels: picked } })),
-    onSuccess: (r) => { setResult(r.map((x) => x.channel!)); void qc.invalidateQueries({ queryKey: ['ai'] }) },
+    onSuccess: (r) => { setResult(r.map((x) => x.channel)); void qc.invalidateQueries({ queryKey: ['ai'] }) },
   })
   const toggle = (code: string) => { setResult(null); setPicked((p) => (p.includes(code) ? p.filter((c) => c !== code) : [...p, code])) }
   const none = !channels.some((c) => c.canPublish)
@@ -27,10 +27,10 @@ export function PublishPanel({ draftId, suggested, access, onEdit }: { draftId: 
       <div className="publish__channels">
         {channels.map((c) => {
           const usable = !!c.canPublish && !!c.connected
-          const on = picked.includes(c.code!)
+          const on = picked.includes(c.code)
           return (
             <button key={c.code} type="button" className="channel" aria-pressed={on} disabled={!usable} data-on={on}
-              title={usable ? undefined : c.connected ? 'Your role cannot publish to this channel' : 'Not connected'} onClick={() => toggle(c.code!)}>
+              title={usable ? undefined : c.connected ? 'Your role cannot publish to this channel' : 'Not connected'} onClick={() => toggle(c.code)}>
               {ICON[c.provider ?? '']}<span>{c.name}</span>{on ? <span aria-hidden="true">✓</span> : null}{!usable ? <span className="sr-only"> (not available to you)</span> : null}
             </button>
           )

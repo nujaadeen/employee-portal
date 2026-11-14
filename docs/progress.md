@@ -23,3 +23,14 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 7. Required fields in the contract
 - [x] 8. Activity order
 - [x] Docs: api.md, openapi.json, backend-gaps.md, mvn verify (123 tests)
+
+## Prompt 04 (frontend follow-up)
+- [x] 1. Regenerated API types, removed the non-null assertions
+- [ ] 2. Create task: members picker, add/remove members
+- [ ] 3. Branch and Link PR: repositories select
+- [ ] 4. giteaUrl from /api/config, remove VITE_GITEA_URL
+- [ ] 5. Reset access, New role, Delete role, toasts
+- [ ] 6. Notifications: unreadCount, Unread only, Load more, Mark all as read
+- [ ] 7. MFA states with text and icon
+- [ ] 8. Activity order note
+- [ ] Tests, Playwright, screenshots, docs

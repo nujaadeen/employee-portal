@@ -29,16 +29,16 @@ export function Approvals() {
   const decide = useMutation({
     mutationFn: ({ req, action }: { req: LeaveRequest; action: 'approve' | 'reject' }) =>
       unwrap(action === 'approve'
-        ? api.POST('/api/leave/requests/{id}/approve', { params: { path: { id: req.id! } }, body: { note: note || undefined } })
-        : api.POST('/api/leave/requests/{id}/reject', { params: { path: { id: req.id! } }, body: { note: note || undefined } })),
+        ? api.POST('/api/leave/requests/{id}/approve', { params: { path: { id: req.id } }, body: { note: note || undefined } })
+        : api.POST('/api/leave/requests/{id}/reject', { params: { path: { id: req.id } }, body: { note: note || undefined } })),
     onSuccess: () => { setTarget(null); setNote(''); void qc.invalidateQueries({ queryKey: ['leave'] }); void qc.invalidateQueries({ queryKey: ['dashboard'] }); void qc.invalidateQueries({ queryKey: ['me'] }) },
   })
   const close = () => { setTarget(null); setNote(''); decide.reset() }
   // Pending first (soonest first), then the five most recent decisions, like the screen.
   const all = q.data ?? []
   const rows = [
-    ...all.filter((r) => r.status === 'PENDING').sort((a, b) => a.from!.localeCompare(b.from!)),
-    ...all.filter((r) => r.status !== 'PENDING').sort((a, b) => b.from!.localeCompare(a.from!)).slice(0, 5),
+    ...all.filter((r) => r.status === 'PENDING').sort((a, b) => a.from.localeCompare(b.from)),
+    ...all.filter((r) => r.status !== 'PENDING').sort((a, b) => b.from.localeCompare(a.from)).slice(0, 5),
   ]
   return (
     <Card title="Requests to approve" id="approvals" action={<StatusPill tone="info"><Users size={14} aria-hidden="true" /> {everyone ? 'Everyone' : 'Your direct reports'}</StatusPill>}>
@@ -51,9 +51,9 @@ export function Approvals() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
-                  <td><span className="person"><Avatar name={r.employeeName!} size="sm" /><span className="person__name">{r.employeeName}</span></span></td>
-                  <td>{r.typeName}</td><td>{dateRange(r.from!, r.to!)}</td><td>{r.days}</td>
-                  <td><StatusPill tone={LEAVE_TONE[r.status!]!.tone}>{LEAVE_TONE[r.status!]!.label}</StatusPill></td>
+                  <td><span className="person"><Avatar name={r.employeeName} size="sm" /><span className="person__name">{r.employeeName}</span></span></td>
+                  <td>{r.typeName}</td><td>{dateRange(r.from, r.to)}</td><td>{r.days}</td>
+                  <td><StatusPill tone={LEAVE_TONE[r.status]!.tone}>{LEAVE_TONE[r.status]!.label}</StatusPill></td>
                   <td>
                     {r.status === 'PENDING' ? (
                       <span className="row" style={{ justifyContent: 'flex-end' }}>
@@ -71,7 +71,7 @@ export function Approvals() {
       <ConfirmDialog open={!!target} onCancel={close} busy={decide.isPending} destructive={target?.action === 'reject'}
         title={target?.action === 'approve' ? 'Approve this request?' : 'Reject this request?'}
         confirmLabel={target?.action === 'approve' ? 'Approve' : 'Reject'}
-        message={target ? `${target.req.employeeName}, ${target.req.typeName?.toLowerCase()} leave, ${dateRange(target.req.from!, target.req.to!)} (${target.req.days} working days). They will be notified.` : ''}
+        message={target ? `${target.req.employeeName}, ${target.req.typeName?.toLowerCase()} leave, ${dateRange(target.req.from, target.req.to)} (${target.req.days} working days). They will be notified.` : ''}
         onConfirm={() => { if (target) decide.mutate(target) }}>
         <TextArea label="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500}
           error={decide.error instanceof ApiError ? decide.error.message : null} />

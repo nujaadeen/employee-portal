@@ -27,7 +27,7 @@ export function AccessPage() {
             <ul className="plain-list">
               {(roles.data ?? []).map((r) => (
                 <li key={r.name}>
-                  <button type="button" className="role-btn" aria-current={r.name === role ? 'true' : undefined} onClick={() => setPicked(r.name!)}>
+                  <button type="button" className="role-btn" aria-current={r.name === role ? 'true' : undefined} onClick={() => setPicked(r.name)}>
                     <span>{roleName(r.name)}</span><span className="muted">{r.people ?? '–'}</span>
                   </button>
                 </li>

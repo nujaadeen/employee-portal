@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{key}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["members"];
+        put?: never;
+        post: operations["addMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/{id}/read": {
         parameters: {
             query?: never;
@@ -126,6 +142,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["readAll"];
         delete?: never;
         options?: never;
         head?: never;
@@ -190,6 +222,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/employees/{id}/reset-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resetAccess"];
         delete?: never;
         options?: never;
         head?: never;
@@ -292,6 +340,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/access/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["roles"];
+        put?: never;
+        post: operations["createRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tasks/{key}": {
         parameters: {
             query?: never;
@@ -380,6 +444,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["projects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{key}/repos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["projectRepos"];
         put?: never;
         post?: never;
         delete?: never;
@@ -516,6 +596,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["config"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/conversations/{id}": {
         parameters: {
             query?: never;
@@ -564,17 +660,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/access/roles": {
+    "/api/projects/{key}/members/{employeeId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["roles"];
+        get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["removeMember"];
         options?: never;
         head?: never;
         patch?: never;
@@ -596,6 +692,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/access/roles/{role}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteRole"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -604,126 +716,141 @@ export interface components {
             permissions: string[];
         };
         MatrixPermission: {
-            key?: string;
-            module?: string;
-            action?: string;
-            label?: string;
-            hint?: string;
-            group?: string;
-            row?: string;
-            column?: string;
-            granted?: boolean;
+            key: string;
+            module: string;
+            action: string;
+            label: string;
+            hint?: string | null;
+            group: string;
+            row: string;
+            column: string;
+            granted: boolean;
         };
         RoleMatrix: {
-            role?: string;
+            role: string;
             /** Format: int32 */
-            people?: number;
-            permissions?: components["schemas"]["MatrixPermission"][];
+            people?: number | null;
+            permissions: components["schemas"]["MatrixPermission"][];
         };
         ProviderChange: {
             alias: string;
-            enabled?: boolean;
+            enabled: boolean;
         };
         ProviderUpdate: {
             providers: components["schemas"]["ProviderChange"][];
         };
         IdentityProviderInfo: {
-            alias?: string;
-            displayName?: string;
-            enabled?: boolean;
-            editable?: boolean;
+            alias: string;
+            displayName: string;
+            enabled: boolean;
+            editable: boolean;
         };
         CreateTaskRequest: {
             projectKey: string;
             title: string;
-            description?: string;
-            /** @enum {string} */
-            priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+            description?: string | null;
+            /** @enum {string|null} */
+            priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT" | null;
             /** Format: uuid */
-            assigneeId?: string;
+            assigneeId?: string | null;
             /** Format: date */
-            dueDate?: string;
-            label?: string;
+            dueDate?: string | null;
+            label?: string | null;
             /** Format: int64 */
-            sprintId?: number;
+            sprintId?: number | null;
         };
         TaskView: {
             /** Format: int64 */
-            id?: number;
-            key?: string;
-            title?: string;
-            label?: string;
+            id: number;
+            key: string;
+            title: string;
+            label?: string | null;
             /** @enum {string} */
-            status?: "BACKLOG" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
+            status: "BACKLOG" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
             /** @enum {string} */
-            priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+            priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
             /** Format: date */
-            dueDate?: string;
+            dueDate?: string | null;
             /** Format: uuid */
-            assigneeId?: string;
-            assigneeName?: string;
-            assigneeInitials?: string;
+            assigneeId?: string | null;
+            assigneeName?: string | null;
+            assigneeInitials?: string | null;
             /** Format: int32 */
-            subtasksDone?: number;
+            subtasksDone: number;
             /** Format: int32 */
-            subtasksTotal?: number;
+            subtasksTotal: number;
             /** Format: int64 */
-            sprintId?: number;
+            sprintId?: number | null;
         };
         SubtaskRequest: {
             title: string;
         };
         SubtaskDto: {
             /** Format: int64 */
-            id?: number;
-            title?: string;
-            done?: boolean;
+            id: number;
+            title: string;
+            done: boolean;
         };
         LinkPrRequest: {
-            repo?: string;
+            repo?: string | null;
             /** Format: int32 */
             prNumber: number;
         };
         LinkDto: {
-            repo?: string;
-            repoUrl?: string;
-            branch?: string;
+            repo: string;
+            repoUrl?: string | null;
+            branch: string;
             /** Format: int32 */
-            prNumber?: number;
-            prTitle?: string;
-            prState?: string;
-            prUrl?: string;
-            checksStatus?: string;
+            prNumber?: number | null;
+            prTitle?: string | null;
+            prState?: string | null;
+            prUrl?: string | null;
+            checksStatus?: string | null;
             /** Format: int32 */
-            approvals?: number;
-            lastSha?: string;
+            approvals: number;
+            lastSha?: string | null;
         };
         BranchRequest: {
-            repo?: string;
+            repo?: string | null;
         };
         CommentRequest: {
             body: string;
         };
         CommentDto: {
             /** Format: int64 */
-            id?: number;
+            id: number;
             /** Format: uuid */
-            authorId?: string;
-            author?: string;
-            body?: string;
+            authorId: string;
+            author: string;
+            body: string;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
+        };
+        AddMemberRequest: {
+            /** Format: uuid */
+            employeeId: string;
+        };
+        MemberDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            jobTitle?: string | null;
+            initials: string;
         };
         NotificationDto: {
             /** Format: int64 */
-            id?: number;
-            type?: string;
-            title?: string;
-            body?: string;
-            link?: string;
-            read?: boolean;
+            id: number;
+            type: string;
+            title: string;
+            body?: string | null;
+            link?: string | null;
+            read: boolean;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
+        };
+        ReadAllResult: {
+            /** Format: int32 */
+            updated: number;
         };
         CreateLeaveRequest: {
             type: string;
@@ -731,444 +858,467 @@ export interface components {
             from: string;
             /** Format: date */
             to: string;
-            reason?: string;
+            reason?: string | null;
         };
         LeaveRequestDto: {
             /** Format: uuid */
-            id?: string;
+            id: string;
             /** Format: uuid */
-            employeeId?: string;
-            employeeName?: string;
-            type?: string;
-            typeName?: string;
+            employeeId: string;
+            employeeName: string;
+            type: string;
+            typeName: string;
             /** Format: date */
-            from?: string;
+            from: string;
             /** Format: date */
-            to?: string;
+            to: string;
             /** Format: int32 */
-            days?: number;
-            reason?: string;
+            days: number;
+            reason?: string | null;
             /** @enum {string} */
-            status?: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
-            decidedBy?: string;
+            status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+            decidedBy?: string | null;
             /** Format: date-time */
-            decidedAt?: string;
-            note?: string;
+            decidedAt?: string | null;
+            note?: string | null;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         DecisionRequest: {
-            note?: string;
+            note?: string | null;
         };
         WebhookResult: {
-            event?: string;
+            event?: string | null;
             /** Format: int32 */
-            tasksUpdated?: number;
+            tasksUpdated: number;
         };
         ApproveRequest: {
             role: string;
             /** Format: uuid */
-            managerId?: string;
-            jobTitle?: string;
-            department?: string;
+            managerId?: string | null;
+            jobTitle?: string | null;
+            department?: string | null;
         };
         EmployeeItem: {
             /** Format: uuid */
-            id?: string;
-            name?: string;
-            jobTitle?: string;
-            department?: string;
-            email?: string;
-            code?: string;
-            role?: string;
-            /** @enum {string} */
-            status?: "ACTIVE" | "ON_LEAVE" | "ONBOARDING" | "PENDING_APPROVAL" | "DEACTIVATED";
+            id: string;
+            name: string;
+            jobTitle?: string | null;
+            department?: string | null;
+            email: string;
+            code?: string | null;
+            role?: string | null;
+            /** @enum {string|null} */
+            status?: "ACTIVE" | "ON_LEAVE" | "ONBOARDING" | "PENDING_APPROVAL" | "DEACTIVATED" | null;
             /** Format: date */
-            joinedOn?: string;
+            joinedOn?: string | null;
             /** Format: uuid */
-            managerId?: string;
-            managerName?: string;
+            managerId?: string | null;
+            managerName?: string | null;
             /** Format: int32 */
-            annualLeaveLeft?: number;
-            phone?: string;
-            location?: string;
-            giteaUsername?: string;
+            annualLeaveLeft?: number | null;
+            phone?: string | null;
+            location?: string | null;
+            giteaUsername?: string | null;
         };
         InviteRequest: {
             /** Format: email */
             email: string;
             firstName: string;
             lastName: string;
-            jobTitle?: string;
-            department?: string;
+            jobTitle?: string | null;
+            department?: string | null;
             /** Format: uuid */
-            managerId?: string;
-            role?: string;
+            managerId?: string | null;
+            role?: string | null;
         };
         AnnouncementRequest: {
             title: string;
-            body?: string;
-            postedBy?: string;
+            body?: string | null;
+            postedBy?: string | null;
         };
         AnnouncementDto: {
             /** Format: int64 */
-            id?: number;
-            title?: string;
-            body?: string;
-            postedBy?: string;
+            id: number;
+            title: string;
+            body?: string | null;
+            postedBy: string;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         PublishRequest: {
             channels: string[];
         };
         PublishResult: {
-            channel?: string;
-            status?: string;
+            channel: string;
+            status: string;
         };
         NewConversation: {
-            title?: string;
+            title?: string | null;
         };
         ConversationDto: {
             /** Format: uuid */
-            id?: string;
-            title?: string;
+            id: string;
+            title: string;
             /** Format: date-time */
-            updatedAt?: string;
+            updatedAt: string;
         };
         SendMessage: {
             message: string;
         };
         DraftDto: {
             /** Format: uuid */
-            id?: string;
-            kind?: string;
-            headline?: string;
-            caption?: string;
-            hashtags?: string[];
-            suggestedChannels?: string[];
+            id: string;
+            kind: string;
+            headline: string;
+            caption: string;
+            hashtags: string[];
+            suggestedChannels: string[];
         };
         Exchange: {
-            userMessage?: components["schemas"]["MessageDto"];
-            assistantMessage?: components["schemas"]["MessageDto"];
+            userMessage: components["schemas"]["MessageDto"];
+            assistantMessage: components["schemas"]["MessageDto"];
         };
         MessageDto: {
             /** Format: uuid */
-            id?: string;
-            role?: string;
-            content?: string;
+            id: string;
+            role: string;
+            content: string;
             /** Format: date-time */
-            createdAt?: string;
-            sources?: components["schemas"]["SourceDto"][];
+            createdAt: string;
+            sources: components["schemas"]["SourceDto"][];
             draft?: components["schemas"]["DraftDto"];
         };
         SourceDto: {
-            title?: string;
-            collection?: string;
+            title: string;
+            collection: string;
+        };
+        CreateRoleRequest: {
+            name: string;
+            description?: string | null;
+        };
+        RoleSummary: {
+            name: string;
+            description?: string | null;
+            builtIn: boolean;
+            /** Format: int32 */
+            people?: number | null;
         };
         UpdateTaskRequest: {
-            title?: string;
-            description?: string;
-            /** @enum {string} */
-            priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+            title?: string | null;
+            description?: string | null;
+            /** @enum {string|null} */
+            priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT" | null;
             /** Format: uuid */
-            assigneeId?: string;
+            assigneeId?: string | null;
             /** Format: date */
-            dueDate?: string;
-            label?: string;
+            dueDate?: string | null;
+            label?: string | null;
             /** Format: int64 */
-            sprintId?: number;
+            sprintId?: number | null;
         };
         SubtaskUpdate: {
-            title?: string;
-            done?: boolean;
+            title?: string | null;
+            done?: boolean | null;
         };
         StatusRequest: {
             /** @enum {string} */
             status: "BACKLOG" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
         };
         UpdateEmployee: {
-            jobTitle?: string;
-            department?: string;
+            jobTitle?: string | null;
+            department?: string | null;
             /** Format: uuid */
-            managerId?: string;
-            phone?: string;
-            location?: string;
-            giteaUsername?: string;
-            /** @enum {string} */
-            status?: "ACTIVE" | "ON_LEAVE" | "ONBOARDING" | "PENDING_APPROVAL" | "DEACTIVATED";
+            managerId?: string | null;
+            phone?: string | null;
+            location?: string | null;
+            giteaUsername?: string | null;
+            /** @enum {string|null} */
+            status?: "ACTIVE" | "ON_LEAVE" | "ONBOARDING" | "PENDING_APPROVAL" | "DEACTIVATED" | null;
             /** Format: date */
-            joinedOn?: string;
+            joinedOn?: string | null;
         };
         GitSummary: {
-            repo?: string;
-            branch?: string;
+            repo: string;
+            branch: string;
             /** Format: int32 */
-            prNumber?: number;
-            prState?: string;
-            checksStatus?: string;
+            prNumber?: number | null;
+            prState?: string | null;
+            checksStatus?: string | null;
             /** Format: int32 */
-            approvals?: number;
+            approvals: number;
         };
         TaskCard: {
-            task?: components["schemas"]["TaskView"];
+            task: components["schemas"]["TaskView"];
             git?: components["schemas"]["GitSummary"];
         };
         ActivityDto: {
             /** Format: int64 */
-            id?: number;
-            actor?: string;
-            kind?: string;
-            message?: string;
+            id: number;
+            actor: string;
+            kind: string;
+            message: string;
             /** Format: date-time */
-            createdAt?: string;
+            createdAt: string;
         };
         CommitDto: {
-            sha?: string;
-            shortSha?: string;
-            message?: string;
-            author?: string;
+            sha: string;
+            shortSha: string;
+            message: string;
+            author?: string | null;
             /** Format: date-time */
-            committedAt?: string;
-            url?: string;
+            committedAt: string;
+            url?: string | null;
         };
         GitDetail: {
-            webhookLive?: boolean;
-            baseUrl?: string;
-            links?: components["schemas"]["LinkDto"][];
-            commits?: components["schemas"]["CommitDto"][];
+            webhookLive: boolean;
+            baseUrl?: string | null;
+            links: components["schemas"]["LinkDto"][];
+            commits: components["schemas"]["CommitDto"][];
         };
         TaskDetailDto: {
-            task?: components["schemas"]["TaskView"];
-            projectKey?: string;
-            description?: string;
+            task: components["schemas"]["TaskView"];
+            projectKey: string;
+            description?: string | null;
             /** Format: uuid */
-            reporterId?: string;
-            reporterName?: string;
-            sprintName?: string;
-            subtasks?: components["schemas"]["SubtaskDto"][];
-            comments?: components["schemas"]["CommentDto"][];
-            activity?: components["schemas"]["ActivityDto"][];
+            reporterId?: string | null;
+            reporterName?: string | null;
+            sprintName?: string | null;
+            subtasks: components["schemas"]["SubtaskDto"][];
+            comments: components["schemas"]["CommentDto"][];
+            activity: components["schemas"]["ActivityDto"][];
         };
         TaskDetailResponse: {
-            task?: components["schemas"]["TaskDetailDto"];
-            git?: components["schemas"]["GitDetail"];
+            task: components["schemas"]["TaskDetailDto"];
+            git: components["schemas"]["GitDetail"];
         };
         RepoDto: {
             /** Format: int64 */
-            projectId?: number;
-            fullName?: string;
-            defaultBranch?: string;
-            htmlUrl?: string;
+            projectId: number;
+            fullName: string;
+            defaultBranch: string;
+            htmlUrl?: string | null;
         };
         ProjectDto: {
             /** Format: int64 */
-            id?: number;
-            key?: string;
-            name?: string;
+            id: number;
+            key: string;
+            name: string;
             /** Format: int32 */
-            members?: number;
+            members: number;
             activeSprint?: components["schemas"]["SprintDto"];
         };
         SprintDto: {
             /** Format: int64 */
-            id?: number;
-            name?: string;
+            id: number;
+            name: string;
             /** Format: date */
-            startsOn?: string;
+            startsOn: string;
             /** Format: date */
-            endsOn?: string;
-            active?: boolean;
+            endsOn: string;
+            active: boolean;
         };
         Board: {
-            project?: components["schemas"]["ProjectDto"];
+            project: components["schemas"]["ProjectDto"];
             sprint?: components["schemas"]["SprintDto"];
-            sprints?: components["schemas"]["SprintDto"][];
+            sprints: components["schemas"]["SprintDto"][];
             /** Format: int32 */
-            taskCount?: number;
+            taskCount: number;
             /** Format: int32 */
-            linkedToGitea?: number;
+            linkedToGitea: number;
             /** Format: date-time */
-            lastSyncedAt?: string;
-            columns?: components["schemas"]["Column"][];
+            lastSyncedAt?: string | null;
+            columns: components["schemas"]["Column"][];
         };
         Column: {
             /** @enum {string} */
-            status?: "BACKLOG" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
-            label?: string;
+            status: "BACKLOG" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
+            label: string;
             /** Format: int32 */
-            count?: number;
-            tasks?: components["schemas"]["TaskCard"][];
+            count: number;
+            tasks: components["schemas"]["TaskCard"][];
+        };
+        NotificationPage: {
+            items: components["schemas"]["NotificationDto"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            unreadCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
         };
         ManagerRef: {
             /** Format: uuid */
-            id?: string;
-            name?: string;
+            id: string;
+            name: string;
         };
         MeResponse: {
             /** Format: uuid */
-            id?: string;
-            code?: string;
-            name?: string;
-            email?: string;
-            jobTitle?: string;
-            department?: string;
-            status?: string;
-            roles?: string[];
-            permissions?: string[];
+            id: string;
+            code: string;
+            name: string;
+            email: string;
+            jobTitle?: string | null;
+            department?: string | null;
+            status: string;
+            roles: string[];
+            permissions: string[];
             manager?: components["schemas"]["ManagerRef"];
-            signInMethods?: components["schemas"]["SignInMethod"][];
+            signInMethods: components["schemas"]["SignInMethodInfo"][];
             /** Format: int64 */
-            unreadNotifications?: number;
+            unreadNotifications: number;
         };
-        SignInMethod: {
-            key?: string;
-            label?: string;
-            linked?: boolean;
-            mfa?: boolean;
+        SignInMethodInfo: {
+            key: string;
+            label: string;
+            linked: boolean;
+            /** @enum {string} */
+            mfa: "ENABLED" | "DISABLED" | "PROVIDER_MANAGED";
         };
         Preview: {
             /** Format: int32 */
-            workingDays?: number;
+            workingDays: number;
             /** Format: int32 */
-            balanceAfter?: number;
-            overlaps?: string[];
-            overlapsOwnRequest?: boolean;
+            balanceAfter?: number | null;
+            overlaps: string[];
+            overlapsOwnRequest: boolean;
         };
         CalendarEntry: {
             /** Format: uuid */
-            employeeId?: string;
-            name?: string;
-            initials?: string;
-            type?: string;
+            employeeId: string;
+            name: string;
+            initials: string;
+            type: string;
             /** Format: date */
-            from?: string;
+            from: string;
             /** Format: date */
-            to?: string;
+            to: string;
             /** @enum {string} */
-            status?: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+            status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
         };
         BalanceDto: {
-            type?: string;
-            name?: string;
+            type: string;
+            name: string;
             /** Format: int32 */
-            entitled?: number;
+            entitled?: number | null;
             /** Format: int32 */
-            used?: number;
+            used: number;
             /** Format: int32 */
-            pending?: number;
+            pending: number;
             /** Format: int32 */
-            left?: number;
+            left?: number | null;
         };
         EmployeePage: {
-            items?: components["schemas"]["EmployeeItem"][];
+            items: components["schemas"]["EmployeeItem"][];
             /** Format: int32 */
-            page?: number;
+            page: number;
             /** Format: int32 */
-            size?: number;
+            size: number;
             /** Format: int64 */
-            total?: number;
+            total: number;
             statusCounts?: {
                 [key: string]: number;
-            };
+            } | null;
         };
         EmployeeDetail: {
-            employee?: components["schemas"]["EmployeeItem"];
-            roles?: string[];
-            signInMethods?: components["schemas"]["SignInMethodDto"][];
-            recentLeave?: components["schemas"]["LeaveRequestDto"][];
-        };
-        SignInMethodDto: {
-            key?: string;
-            label?: string;
-            linked?: boolean;
-            mfa?: boolean;
+            employee: components["schemas"]["EmployeeItem"];
+            roles?: string[] | null;
+            signInMethods?: components["schemas"]["SignInMethodInfo"][] | null;
+            recentLeave: components["schemas"]["LeaveRequestDto"][];
         };
         AnnualLeave: {
             /** Format: int32 */
-            left?: number;
+            left: number;
             /** Format: int32 */
-            entitled?: number;
+            entitled: number;
         };
         Dashboard: {
-            firstName?: string;
+            firstName: string;
             /** Format: date */
-            today?: string;
-            department?: string;
+            today: string;
+            department?: string | null;
             annualLeave?: components["schemas"]["AnnualLeave"];
-            openTasks?: components["schemas"]["OpenTasks"];
-            nextDue?: components["schemas"]["DueTask"][];
+            openTasks: components["schemas"]["OpenTasks"];
+            nextDue: components["schemas"]["DueTask"][];
             /** Format: int32 */
-            pullRequestsAwaitingReview?: number;
-            outToday?: components["schemas"]["OutEntry"][];
-            announcements?: components["schemas"]["AnnouncementDto"][];
+            pullRequestsAwaitingReview: number;
+            outToday: components["schemas"]["OutEntry"][];
+            announcements: components["schemas"]["AnnouncementDto"][];
         };
         DueTask: {
-            key?: string;
-            title?: string;
+            key: string;
+            title: string;
             /** Format: date */
-            dueDate?: string;
+            dueDate: string;
             /** @enum {string} */
-            status?: "BACKLOG" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
-            label?: string;
+            status: "BACKLOG" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
+            label?: string | null;
         };
         OpenTasks: {
             /** Format: int32 */
-            count?: number;
+            count: number;
             /** Format: int32 */
-            dueThisWeek?: number;
+            dueThisWeek: number;
         };
         OutEntry: {
             /** Format: uuid */
-            employeeId?: string;
-            name?: string;
-            initials?: string;
-            typeName?: string;
+            employeeId: string;
+            name: string;
+            initials: string;
+            typeName: string;
             /** Format: date */
-            to?: string;
+            to: string;
             /** Format: date */
-            backOn?: string;
+            backOn: string;
+        };
+        LeaveTypeInfo: {
+            code: string;
+            name: string;
+            /** Format: int32 */
+            defaultDays?: number | null;
+        };
+        PublicConfig: {
+            appName: string;
+            giteaUrl: string;
+            leaveTypes: components["schemas"]["LeaveTypeInfo"][];
         };
         ConversationDetail: {
             /** Format: uuid */
-            id?: string;
-            title?: string;
-            messages?: components["schemas"]["MessageDto"][];
+            id: string;
+            title: string;
+            messages: components["schemas"]["MessageDto"][];
         };
         AiAccess: {
-            roles?: string[];
-            collections?: components["schemas"]["CollectionDto"][];
-            channels?: components["schemas"]["ChannelDto"][];
+            roles: string[];
+            collections: components["schemas"]["CollectionDto"][];
+            channels: components["schemas"]["ChannelDto"][];
             /** Format: int32 */
-            companyChannels?: number;
+            companyChannels: number;
             /** Format: int32 */
-            personalChannels?: number;
+            personalChannels: number;
         };
         ChannelDto: {
-            code?: string;
-            name?: string;
-            type?: string;
-            provider?: string;
-            connected?: boolean;
-            canPublish?: boolean;
+            code: string;
+            name: string;
+            type: string;
+            provider: string;
+            connected: boolean;
+            canPublish: boolean;
         };
         CollectionDto: {
-            code?: string;
-            name?: string;
+            code: string;
+            name: string;
             /** Format: int32 */
-            docCount?: number;
-            allowed?: boolean;
+            docCount: number;
+            allowed: boolean;
         };
         AccessSettings: {
-            defaultRoleForNewSignUps?: string;
-            approver?: string;
+            defaultRoleForNewSignUps: string;
+            approver: string;
             /** Format: int32 */
-            sessionLengthHours?: number;
-        };
-        RoleSummary: {
-            name?: string;
-            /** Format: int32 */
-            people?: number;
+            sessionLengthHours: number;
         };
     };
     responses: never;
@@ -1423,6 +1573,54 @@ export interface operations {
             };
         };
     };
+    members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberDto"][];
+                };
+            };
+        };
+    };
+    addMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberDto"][];
+                };
+            };
+        };
+    };
     read: {
         parameters: {
             query?: never;
@@ -1441,6 +1639,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["NotificationDto"];
+                };
+            };
+        };
+    };
+    readAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReadAllResult"];
                 };
             };
         };
@@ -1568,6 +1786,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["WebhookResult"];
                 };
+            };
+        };
+    };
+    resetAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1761,9 +1999,56 @@ export interface operations {
             };
         };
     };
-    detail: {
+    roles: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RoleSummary"][];
+                };
+            };
+        };
+    };
+    createRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RoleSummary"];
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: {
+                /** @description Order of the activity feed: desc (newest first, default) or asc */
+                activityOrder?: string;
+            };
             header?: never;
             path: {
                 key: string;
@@ -1973,6 +2258,28 @@ export interface operations {
             };
         };
     };
+    projectRepos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RepoDto"][];
+                };
+            };
+        };
+    };
     board: {
         parameters: {
             query?: {
@@ -1999,7 +2306,11 @@ export interface operations {
     };
     list_2: {
         parameters: {
-            query?: never;
+            query?: {
+                unread?: boolean;
+                page?: number;
+                size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2012,7 +2323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["NotificationDto"][];
+                    "*/*": components["schemas"]["NotificationPage"];
                 };
             };
         };
@@ -2150,6 +2461,26 @@ export interface operations {
             };
         };
     };
+    config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicConfig"];
+                };
+            };
+        };
+    };
     get_1: {
         parameters: {
             query?: never;
@@ -2212,11 +2543,14 @@ export interface operations {
             };
         };
     };
-    roles: {
+    removeMember: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                key: string;
+                employeeId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -2226,9 +2560,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["RoleSummary"][];
-                };
+                content?: never;
             };
         };
     };
@@ -2251,6 +2583,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["LeaveRequestDto"];
                 };
+            };
+        };
+    };
+    deleteRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

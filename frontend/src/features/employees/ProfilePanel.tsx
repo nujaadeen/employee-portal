@@ -21,13 +21,13 @@ export function ProfilePanel({ id, myId, onEdit }: { id: string; myId?: string; 
   const canApprove = usePermission('leave:approve')
   if (q.isPending) return <Card as="aside" aria-label="Profile"><SkeletonRows rows={6} label="Loading profile" /></Card>
   if (q.isError) return <Card as="aside" aria-label="Profile"><p className="note note--danger" role="alert">Could not load this profile. {q.error.message}</p></Card>
-  const e = q.data.employee!
+  const e = q.data.employee
   const leave = q.data.recentLeave ?? []
   const pending = leave.some((l) => l.status === 'PENDING')
   return (
     <Card as="aside" aria-label={`Profile of ${e.name}`} className="profile-panel">
       <div className="row" style={{ marginBottom: 'var(--space-4)' }}>
-        <Avatar name={e.name!} size="lg" />
+        <Avatar name={e.name} size="lg" />
         <div style={{ minWidth: 0 }}>
           <h2 className="card__title">{e.name}</h2>
           <div className="muted">{e.jobTitle}{e.location ? ` · ${e.location}` : ''}</div>
@@ -61,8 +61,8 @@ export function ProfilePanel({ id, myId, onEdit }: { id: string; myId?: string; 
           <ul className="plain-list">
             {leave.map((l) => (
               <li key={l.id} className="row" style={{ padding: 'var(--space-3) 0', borderTop: '1px solid var(--border-subtle)' }}>
-                <div className="grow"><strong>{l.typeName} · {dateRange(l.from!, l.to!)}</strong><div className="muted">{plural(l.days ?? 0, 'working day')}</div></div>
-                <StatusPill tone={LEAVE_TONE[l.status!]!.tone}>{LEAVE_TONE[l.status!]!.label}</StatusPill>
+                <div className="grow"><strong>{l.typeName} · {dateRange(l.from, l.to)}</strong><div className="muted">{plural(l.days ?? 0, 'working day')}</div></div>
+                <StatusPill tone={LEAVE_TONE[l.status]!.tone}>{LEAVE_TONE[l.status]!.label}</StatusPill>
               </li>
             ))}
           </ul>

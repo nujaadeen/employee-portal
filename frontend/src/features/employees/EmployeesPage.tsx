@@ -28,7 +28,7 @@ function useList(scope: EmployeeTab, enabled: boolean, q: string, status?: strin
 }
 
 const Person = ({ e }: { e: EmployeeItem }) => (
-  <span className="person"><Avatar name={e.name!} /><span style={{ minWidth: 0 }}><span className="person__name">{e.name}</span><span className="person__sub">{e.email}</span></span></span>
+  <span className="person"><Avatar name={e.name} /><span style={{ minWidth: 0 }}><span className="person__name">{e.name}</span><span className="person__sub">{e.email}</span></span></span>
 )
 
 export function EmployeesPage() {
@@ -80,7 +80,7 @@ export function EmployeesPage() {
       {has('employee:manage') && tab === 'all' && (waiting.data?.items ?? []).length > 0 ? (
         <Card title="Waiting for approval" subtitle="New sign-ups have no role until you approve them." className="emp-waiting">
           <ul className="plain-list">
-            {waiting.data!.items!.map((p) => (
+            {(waiting.data?.items ?? []).map((p) => (
               <li key={p.id} className="row emp-waiting__row">
                 <Person e={p} /><span className="grow" />
                 <Button variant="primary" aria-label={`Approve ${p.name}`} onClick={() => setApprove(p)}>Approve</Button>
@@ -124,7 +124,7 @@ export function EmployeesPage() {
                 <tbody>
                   {items.map((e) => (
                     <tr key={e.id} aria-selected={tab !== 'directory' && sel === e.id}>
-                      <td>{tab === 'directory' ? <Person e={e} /> : <button type="button" className="row-btn" onClick={() => setSelected(e.id!)} aria-label={`Show ${e.name}`}><Person e={e} /></button>}</td>
+                      <td>{tab === 'directory' ? <Person e={e} /> : <button type="button" className="row-btn" onClick={() => setSelected(e.id)} aria-label={`Show ${e.name}`}><Person e={e} /></button>}</td>
                       <td>{e.jobTitle}{tab !== 'team' && e.department ? <div className="muted">{e.department}</div> : null}</td>
                       {tab === 'directory' ? <td>{e.department}</td> : null}
                       {tab === 'team' ? <td>{e.annualLeaveLeft == null ? '–' : plural(e.annualLeaveLeft, 'day')}</td> : null}

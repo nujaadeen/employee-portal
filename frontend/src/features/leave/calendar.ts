@@ -31,11 +31,11 @@ export function weekOf(iso: string): Cell[] {
 
 export const isWeekend = (iso: string) => { const g = parseDate(iso).getDay(); return g === 0 || g === 6 }
 
-type Span = { from?: string; to?: string }
+type Span = { from: string; to: string }
 /** Leave spans that cover the day. Weekends are not shown, like the screen. */
 export function entriesForDay<T extends Span>(entries: T[], iso: string): T[] {
   if (isWeekend(iso)) return []
-  return entries.filter((e) => e.from! <= iso && iso <= e.to!)
+  return entries.filter((e) => e.from <= iso && iso <= e.to)
 }
 
 export const monthKey = (year: number, month: number) => `${year}-${String(month + 1).padStart(2, '0')}`

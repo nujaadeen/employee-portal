@@ -31,7 +31,7 @@ export function SignInMethods() {
             <li key={p.alias} className="row idp">
               <span className="signin__icon" aria-hidden="true">{ICON[p.alias ?? '']}</span>
               <div className="grow"><strong>{p.displayName}</strong><div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{NOTE[p.alias ?? ''] ?? ''}</div></div>
-              <Toggle label={`${p.displayName} sign-in`} checked={!!p.enabled} disabled={!p.editable || m.isPending} onChange={(v) => m.mutate({ alias: p.alias!, enabled: v })} />
+              <Toggle label={`${p.displayName} sign-in`} checked={!!p.enabled} disabled={!p.editable || m.isPending} onChange={(v) => m.mutate({ alias: p.alias, enabled: v })} />
             </li>
           ))}
         </ul>
