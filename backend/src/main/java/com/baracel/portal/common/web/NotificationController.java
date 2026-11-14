@@ -22,10 +22,19 @@ public class NotificationController {
         }
     }
 
+    public record NotificationPage(List<NotificationDto> items, long total, long unreadCount, int page, int size) {}
+    public record ReadAllResult(int updated) {}
+
     @GetMapping
-    public List<NotificationDto> list(CurrentUser me) {
-        return service.latest(me.employeeId()).stream().map(NotificationDto::of).toList();
+    public NotificationPage list(CurrentUser me, @RequestParam(defaultValue = "false") boolean unread,
+                                 @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        var result = service.page(me.employeeId(), unread, page, size);
+        return new NotificationPage(result.getContent().stream().map(NotificationDto::of).toList(), result.getTotalElements(),
+                service.unreadCount(me.employeeId()), result.getNumber(), result.getSize());
     }
+
+    @PostMapping("/read-all")
+    public ReadAllResult readAll(CurrentUser me) { return new ReadAllResult(service.markAllRead(me.employeeId())); }
 
     @PostMapping("/{id}/read")
     public NotificationDto read(CurrentUser me, @PathVariable long id) {

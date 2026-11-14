@@ -4,8 +4,10 @@ import com.baracel.portal.common.domain.Notification;
 import com.baracel.portal.common.repo.NotificationRepository;
 import com.baracel.portal.common.web.ApiException;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +35,14 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<Notification> latest(UUID employeeId) { return repo.findTop50ByEmployeeIdOrderByCreatedAtDesc(employeeId); }
+    public Page<Notification> page(UUID employeeId, boolean unreadOnly, int page, int size) {
+        PageRequest pr = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
+        return unreadOnly ? repo.findByEmployeeIdAndReadAtIsNull(employeeId, pr) : repo.findByEmployeeId(employeeId, pr);
+    }
+
+    /** Marks only the caller's own notifications as read. Returns how many changed. */
+    @Transactional
+    public int markAllRead(UUID employeeId) { return repo.markAllRead(employeeId, Instant.now()); }
 
     @Transactional(readOnly = true)
     public long unreadCount(UUID employeeId) { return repo.countByEmployeeIdAndReadAtIsNull(employeeId); }

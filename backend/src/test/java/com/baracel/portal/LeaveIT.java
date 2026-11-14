@@ -70,7 +70,7 @@ class LeaveIT extends IntegrationTest {
                 .andExpect(jsonPath("$.note").value("Enjoy"));
         mvc.perform(getAs("karim.aziz", "/api/leave/balances")).andExpect(jsonPath("$[?(@.type=='ANNUAL')].left").value(4));
         mvc.perform(postAs("omar.haddad", "/api/leave/requests/" + KARIM_PENDING + "/approve", "{}")).andExpect(status().isConflict());
-        mvc.perform(getAs("karim.aziz", "/api/notifications")).andExpect(jsonPath("$[0].title", containsString("approved")));
+        mvc.perform(getAs("karim.aziz", "/api/notifications")).andExpect(jsonPath("$.items[0].title", containsString("approved")));
     }
 
     @Test
@@ -78,8 +78,8 @@ class LeaveIT extends IntegrationTest {
         mvc.perform(postAs("omar.haddad", "/api/leave/requests/" + JOEL_PENDING + "/reject", "{\"note\":\"Release week\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"));
         mvc.perform(getAs("joel.mathews", "/api/leave/balances")).andExpect(jsonPath("$[?(@.type=='ANNUAL')].left").value(17));
-        mvc.perform(getAs("joel.mathews", "/api/notifications")).andExpect(jsonPath("$[0].title", containsString("rejected")))
-                .andExpect(jsonPath("$[0].body", containsString("Release week")));
+        mvc.perform(getAs("joel.mathews", "/api/notifications")).andExpect(jsonPath("$.items[0].title", containsString("rejected")))
+                .andExpect(jsonPath("$.items[0].body", containsString("Release week")));
     }
 
     @Test
@@ -108,10 +108,10 @@ class LeaveIT extends IntegrationTest {
     void submittingNotifiesTheManager() throws Exception {
         create("aisha.rahman", "ANNUAL", "2026-12-07", "2026-12-07");
         mvc.perform(getAs("omar.haddad", "/api/notifications"))
-                .andExpect(jsonPath("$[0].title").value("Leave request from Aisha Rahman"))
-                .andExpect(jsonPath("$[0].read").value(false));
+                .andExpect(jsonPath("$.items[0].title").value("Leave request from Aisha Rahman"))
+                .andExpect(jsonPath("$.items[0].read").value(false));
         mvc.perform(getAs("omar.haddad", "/api/me")).andExpect(jsonPath("$.unreadNotifications").value(3));
-        Integer id = JsonPath.read(mvc.perform(getAs("omar.haddad", "/api/notifications")).andReturn().getResponse().getContentAsString(), "$[0].id");
+        Integer id = JsonPath.read(mvc.perform(getAs("omar.haddad", "/api/notifications")).andReturn().getResponse().getContentAsString(), "$.items[0].id");
         mvc.perform(postAs("omar.haddad", "/api/notifications/" + id + "/read", "{}")).andExpect(jsonPath("$.read").value(true));
         mvc.perform(getAs("omar.haddad", "/api/me")).andExpect(jsonPath("$.unreadNotifications").value(2));
         mvc.perform(postAs("aisha.rahman", "/api/notifications/" + id + "/read", "{}")).andExpect(status().isNotFound());

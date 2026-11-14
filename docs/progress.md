@@ -18,7 +18,7 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 2. Project repositories
 - [x] 3. Public config
 - [x] 4. Reset access and New role
-- [ ] 5. Notifications paging and read-all
+- [x] 5. Notifications paging and read-all
 - [ ] 6. MFA state enum
 - [ ] 7. Required fields in the contract
 - [ ] 8. Activity order
