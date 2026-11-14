@@ -17,3 +17,5 @@
 .matrix__box:hover { background: var(--bg-hover); }
 .idp { padding: var(--space-3) 0; border-top: 1px solid var(--border-subtle); }
 .idp:first-child { border-top: 0; }
+.role-custom { margin-left: var(--space-2); } .role-new { margin-top: var(--space-4); }
+.role-custom { margin-left: var(--space-2); } .role-new { margin-top: var(--space-4); }

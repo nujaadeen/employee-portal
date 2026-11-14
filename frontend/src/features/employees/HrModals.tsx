@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Modal } from '@/ui/Modal'
 import { Select } from '@/ui/Select'
+import { useToast } from '@/ui/Toast'
 import { roleLabel } from './StatusLabel'
 
 /** HR may hand out these four. HR and ADMIN need access:manage (the server enforces it too). */
@@ -30,12 +31,12 @@ function useRefresh() {
 }
 
 export function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const roles = useRoleOptions(); const managers = useManagerOptions(); const refresh = useRefresh()
+  const roles = useRoleOptions(); const managers = useManagerOptions(); const refresh = useRefresh(); const toast = useToast()
   const [f, setF] = useState({ email: '', firstName: '', lastName: '', jobTitle: '', department: '', managerId: '', role: 'EMPLOYEE' })
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
   const m = useMutation({
     mutationFn: () => unwrap(api.POST('/api/employees/invite', { body: { ...f, managerId: f.managerId || undefined } })),
-    onSuccess: () => { refresh(); onClose() },
+    onSuccess: () => { toast.success(`Invitation sent to ${f.email}`); refresh(); onClose() },
   })
   return (
     <Modal open={open} onClose={onClose} title="Invite employee" description="They get an email to verify their address and choose a password."
@@ -53,11 +54,11 @@ export function InviteModal({ open, onClose }: { open: boolean; onClose: () => v
 }
 
 export function ApproveModal({ person, onClose }: { person: EmployeeItem | null; onClose: () => void }) {
-  const roles = useRoleOptions(); const managers = useManagerOptions(); const refresh = useRefresh()
+  const roles = useRoleOptions(); const managers = useManagerOptions(); const refresh = useRefresh(); const toast = useToast()
   const [role, setRole] = useState('EMPLOYEE'); const [managerId, setManagerId] = useState('')
   const m = useMutation({
     mutationFn: () => unwrap(api.POST('/api/employees/{id}/approve', { params: { path: { id: person!.id } }, body: { role, managerId: managerId || undefined } })),
-    onSuccess: () => { refresh(); onClose() },
+    onSuccess: () => { toast.success(`${person?.name ?? 'Person'} approved`); refresh(); onClose() },
   })
   return (
     <Modal open={!!person} onClose={onClose} title={`Approve ${person?.name ?? ''}`} description="Choose the role and the manager. The person is set to Active."
@@ -72,12 +73,12 @@ export function ApproveModal({ person, onClose }: { person: EmployeeItem | null;
 }
 
 export function EditModal({ person, onClose }: { person: EmployeeItem | null; onClose: () => void }) {
-  const managers = useManagerOptions(); const refresh = useRefresh()
+  const managers = useManagerOptions(); const refresh = useRefresh(); const toast = useToast()
   const [f, setF] = useState({ jobTitle: person?.jobTitle ?? '', department: person?.department ?? '', location: person?.location ?? '', phone: person?.phone ?? '', giteaUsername: person?.giteaUsername ?? '', managerId: person?.managerId ?? '', status: person?.status ?? 'ACTIVE' })
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
   const m = useMutation({
     mutationFn: () => unwrap(api.PATCH('/api/employees/{id}', { params: { path: { id: person!.id } }, body: { ...f, managerId: f.managerId || undefined, status: f.status as 'ACTIVE' } })),
-    onSuccess: () => { refresh(); onClose() },
+    onSuccess: () => { toast.success('Record saved'); refresh(); onClose() },
   })
   if (!person) return null
   return (

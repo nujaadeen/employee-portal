@@ -1,5 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { KeyRound, Mail, Pencil, SquareCheck } from 'lucide-react'
+import { ApiError } from '@/api/client'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
+import { useToast } from '@/ui/Toast'
 import { api, unwrap } from '@/api/client'
 import { Can, usePermission } from '@/auth/me'
 import { dateRange, fullDate, plural } from '@/lib/format'
@@ -18,6 +22,13 @@ const ICON: Record<string, React.ReactNode> = { google: <GoogleIcon />, github: 
 export function ProfilePanel({ id, myId, onEdit }: { id: string; myId?: string; onEdit: () => void }) {
   const q = useQuery({ queryKey: ['employee', id], queryFn: () => unwrap(api.GET('/api/employees/{id}', { params: { path: { id } } })) })
   const hr = usePermission('employee:records')
+  const toast = useToast()
+  const [resetting, setResetting] = useState(false)
+  const reset = useMutation({
+    mutationFn: () => unwrap(api.POST('/api/employees/{id}/reset-access', { params: { path: { id } } })),
+    onSuccess: () => { setResetting(false); toast.success('Reset email sent') },
+    onError: (e) => { setResetting(false); toast.error(e instanceof ApiError ? e.message : 'Could not send the reset email.') },
+  })
   const canApprove = usePermission('leave:approve')
   if (q.isPending) return <Card as="aside" aria-label="Profile"><SkeletonRows rows={6} label="Loading profile" /></Card>
   if (q.isError) return <Card as="aside" aria-label="Profile"><p className="note note--danger" role="alert">Could not load this profile. {q.error.message}</p></Card>
@@ -69,10 +80,16 @@ export function ProfilePanel({ id, myId, onEdit }: { id: string; myId?: string; 
         </>
       ) : null}
       <div className="row" style={{ marginTop: 'var(--space-5)', flexWrap: 'wrap' }}>
-        <Can permission="employee:manage"><Button variant="primary" icon={<Pencil size={18} />} onClick={onEdit}>Edit record</Button></Can>
+        <Can permission="employee:manage">
+          <Button variant="primary" icon={<Pencil size={18} />} onClick={onEdit}>Edit record</Button>
+          <Button icon={<KeyRound size={18} />} onClick={() => setResetting(true)}>Reset access</Button>
+        </Can>
         {!hr && canApprove && pending ? <Button variant="primary" to="/leave#approvals">Review request</Button> : null}
         {!hr && e.managerId === myId ? <Button to="/tasks" icon={<SquareCheck size={18} />}>View tasks</Button> : null}
       </div>
+      <ConfirmDialog open={resetting} title={`Reset access for ${e.name}?`} confirmLabel="Send email" busy={reset.isPending}
+        message={`An email will be sent to ${e.email} with a link to choose a new password and verify the address.`}
+        onCancel={() => setResetting(false)} onConfirm={() => reset.mutate()} />
     </Card>
   )
 }
