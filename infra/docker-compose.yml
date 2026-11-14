@@ -55,6 +55,10 @@ services:
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-change-me}
       FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-change-me}
       PORTAL_SERVICE_CLIENT_SECRET: ${PORTAL_SERVICE_CLIENT_SECRET:-change-me-service-secret}
+      GITEA_OIDC_CLIENT_SECRET: ${GITEA_OIDC_CLIENT_SECRET:-change-me-gitea-oidc-secret}
+      # Gitea (in Docker) reaches Keycloak as host.docker.internal; token and userinfo URLs follow the request host,
+      # while the issuer and the browser login URL stay http://localhost:8180.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     ports:
       - "8180:8180"
     volumes:
@@ -85,6 +89,9 @@ services:
       GITEA__server__HTTP_PORT: "3000"
       GITEA__security__INSTALL_LOCK: "true"
       GITEA__webhook__ALLOWED_HOST_LIST: "*"   # lets Gitea call Spring on the host (dev only)
+      GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION: "true"   # first Keycloak sign-in creates the Gitea user
+      GITEA__oauth2_client__USERNAME: preferred_username        # same username as in the portal (gitea_username)
+      GITEA__oauth2_client__ACCOUNT_LINKING: auto
       GITEA__mailer__ENABLED: "true"
       GITEA__mailer__PROTOCOL: smtp
       GITEA__mailer__SMTP_ADDR: mailpit

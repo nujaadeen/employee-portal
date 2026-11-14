@@ -80,6 +80,19 @@ curl -X POST http://localhost:3000/api/v1/repos/baracel/otp-service/hooks -H "Au
 ```
 Restart the backend with `GITEA_TOKEN` and `GITEA_WEBHOOK_SECRET` set. Put a task key such as `BAR-142` in the branch name, PR title or commit message. The seed registers `baracel/otp-service` and `baracel/portal` for project BAR.
 
+## Gitea single sign-on (same login as the portal)
+The realm has a client `gitea` (secret `GITEA_OIDC_CLIENT_SECRET`), and Gitea has an OAuth2 source named `baracel`. On the Gitea login page choose **Sign in with baracel** and use a portal account (for example `aisha.rahman` / `ChangeMe123!`). The first sign-in creates the Gitea user with the same username (`preferred_username`), which is what `gitea_username` in the portal should match.
+One-time setup after a fresh Gitea volume (the compose file already sets auto-registration):
+```bash
+cd infra
+docker compose exec -u git gitea gitea admin auth add-oauth --name baracel --provider openidConnect \
+  --key gitea --secret "$GITEA_OIDC_CLIENT_SECRET" \
+  --auto-discover-url http://host.docker.internal:8180/realms/baracel/.well-known/openid-configuration \
+  --scopes openid --scopes email --scopes profile
+```
+(default secret without `.env`: `change-me-gitea-oidc-secret`). Gitea reaches Keycloak as `host.docker.internal`; Keycloak runs with `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` so token calls work from the container while the browser keeps using `localhost:8180`. Anyone who can sign in to the realm can create a Gitea account this way; the local `baracel-admin` account still works for the API token.
+After editing the realm file, reset Keycloak's database (see above) so the import runs again.
+
 ## Troubleshooting
 - Keycloak Admin calls answer 401: the `portal-service` client needs the `kc-admin-api` scope (it is in the realm file) and `PORTAL_SERVICE_CLIENT_SECRET` must match the realm.
 - `GET /api/me` shows `signInMethods: []`: Keycloak was not reachable or the client secret is wrong. The rest of the API keeps working.
