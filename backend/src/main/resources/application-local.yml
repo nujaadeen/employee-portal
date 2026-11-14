@@ -1,0 +1,4 @@
+# Local development: adds the demo seed (people, Sprint 23, leave) on top of the normal migrations.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed
