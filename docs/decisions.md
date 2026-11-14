@@ -96,3 +96,11 @@ Recipients without a matching portal person (for example a Gitea user whose `git
 - **Activity order.** The default stays newest first (`desc`), as before and as the server stores it. `asc` gives the oldest first, which suits a chronological reading of the feed. The ordering is by timestamp, then id, so entries written in the same millisecond keep their creation order. The parameter is case-insensitive; anything else is 400 `invalid-order`.
 - **Keycloak permission for roles.** Creating and deleting realm roles needs the `manage-realm` role for the `portal-service` account (added to `baracel-realm.json`; on an already imported realm assign it in Keycloak under Clients, portal-service, Service account roles, or reset the Keycloak database). Tests use a fake Keycloak, so this was found by a live check.
 - **Local migrations.** The demo seed is Flyway version 1000, so migration V7 on an already seeded local database needs `spring.flyway.out-of-order=true`; it is set in `application-local.yml` only.
+
+## Frontend follow-up (prompt 04)
+- **Activity order.** The task detail keeps the activity feed newest first and asks for it explicitly (`activityOrder=desc`). The sample screen `design/screens/07-task-detail.png` lists the entries in a mixed order that is only illustrative; `design/` is read-only and was not changed. The backend also supports `asc` if a chronological view is wanted later.
+- **Toasts.** One `ToastProvider` shows short success and error messages for reset access, roles, members, branch and PR actions, invitations and approvals. Errors stay until closed. Field errors from the server (for example an invalid role name) are shown next to the field as well.
+- **Members actions** are offered to people with `employee:manage`, `access:manage` or `employee:team`; the server still decides (a manager outside the project gets 403, shown as an error toast).
+- **Gitea links** (Open in Gitea, PR and commit links, the host chip) are built from `giteaUrl` in `GET /api/config`, not from URLs stored by the backend.
+- **MFA** shows "MFA on", "MFA off" or "Managed by provider", each with its own icon and text.
+- **Notifications** use pages of 20 with a Load more button, an Unread only switch and Mark all as read. The badge uses the server's `unreadCount`.

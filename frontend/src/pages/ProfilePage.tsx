@@ -1,5 +1,6 @@
 import { Check, LogOut, Minus } from 'lucide-react'
 import { logout } from '@/auth/oidc'
+import { MfaBadge } from '@/features/employees/MfaBadge'
 import { Button } from '@/ui/Button'
 import { useMe } from '@/auth/me'
 import { PageHeader } from '@/ui/PageHeader'
@@ -30,7 +31,7 @@ export function ProfilePage() {
               <li key={m.key} className="row" style={{ justifyContent: 'space-between', padding: 'var(--space-3) 0' }}>
                 <span>{m.label}</span>
                 <span className="row">
-                  {m.key === 'password' && m.linked ? <StatusPill tone={m.mfa ? 'success' : 'warning'}>{m.mfa ? 'MFA on' : 'MFA off'}</StatusPill> : null}
+                  <MfaBadge mfa={m.mfa} />
                   <StatusPill tone={m.linked ? 'success' : 'neutral'}>{m.linked ? <><Check size={12} aria-hidden="true" /> Linked</> : <><Minus size={12} aria-hidden="true" /> Not linked</>}</StatusPill>
                 </span>
               </li>

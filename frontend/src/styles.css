@@ -11,3 +11,6 @@
 .bell__item { width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--border-subtle); padding: var(--space-3) 0; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
 .bell__item[data-unread="true"] strong::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--link); margin-right: var(--space-2); }
 .bell__item span { font-size: var(--text-sm); }
+.bell__head { margin-bottom: var(--space-2); }
+.bell__filter { min-height: 44px; cursor: pointer; margin-bottom: var(--space-2); }
+.bell__count { font-size: var(--text-xs); margin: var(--space-3) 0; }

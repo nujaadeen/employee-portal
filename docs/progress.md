@@ -29,8 +29,8 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 2. Create task: members picker, add/remove members
 - [x] 3. Branch and Link PR: repositories select
 - [x] 4. giteaUrl from /api/config, remove VITE_GITEA_URL
-- [ ] 5. Reset access, New role, Delete role, toasts
-- [ ] 6. Notifications: unreadCount, Unread only, Load more, Mark all as read
-- [ ] 7. MFA states with text and icon
-- [ ] 8. Activity order note
+- [x] 5. Reset access, New role, Delete role, toasts
+- [x] 6. Notifications: unreadCount, Unread only, Load more, Mark all as read
+- [x] 7. MFA states with text and icon
+- [x] 8. Activity order note
 - [ ] Tests, Playwright, screenshots, docs

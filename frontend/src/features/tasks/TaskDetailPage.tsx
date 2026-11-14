@@ -32,7 +32,7 @@ export function TaskDetailPage() {
   const [comment, setComment] = useState('')
   const config = useConfig()
   const gitea = config.data?.giteaUrl
-  const q = useQuery({ queryKey: ['task', key], queryFn: () => unwrap(api.GET('/api/tasks/{key}', { params: { path: { key } } })) })
+  const q = useQuery({ queryKey: ['task', key], queryFn: () => unwrap(api.GET('/api/tasks/{key}', { params: { path: { key }, query: { activityOrder: 'desc' } } })) })
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['task', key] }); void qc.invalidateQueries({ queryKey: ['board'] }); void qc.invalidateQueries({ queryKey: ['dashboard'] }) }
   const status = useMutation({ mutationFn: (s: 'BACKLOG' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE') => unwrap(api.PATCH('/api/tasks/{key}/status', { params: { path: { key } }, body: { status: s } })), onSuccess: refresh })
   const toggle = useMutation({ mutationFn: ({ id, done }: { id: number; done: boolean }) => unwrap(api.PATCH('/api/tasks/{key}/subtasks/{id}', { params: { path: { key, id } }, body: { done } })), onSuccess: refresh })

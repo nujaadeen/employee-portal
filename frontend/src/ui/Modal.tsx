@@ -9,13 +9,17 @@ const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select
 export function Modal({ open, title, onClose, children, actions, description }: Props) {
   const titleId = useId()
   const ref = useRef<HTMLDivElement>(null)
+  // Callers pass a new onClose on every render. Keeping it in a ref means the effect below runs only when the dialog opens or closes,
+  // so focus is moved into the dialog once and typing in a field is never interrupted.
+  const closeRef = useRef(onClose)
+  useEffect(() => { closeRef.current = onClose })
   useEffect(() => {
     if (!open) return
     const opener = document.activeElement as HTMLElement | null
     const first = ref.current?.querySelector<HTMLElement>(FOCUSABLE)
     first?.focus()
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose() }
+      if (e.key === 'Escape') { e.stopPropagation(); closeRef.current() }
       if (e.key === 'Tab' && ref.current) {
         const items = Array.from(ref.current.querySelectorAll<HTMLElement>(FOCUSABLE))
         if (!items.length) return
@@ -26,7 +30,7 @@ export function Modal({ open, title, onClose, children, actions, description }: 
     }
     document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('keydown', onKey); opener?.focus?.() }
-  }, [open, onClose])
+  }, [open])
   if (!open) return null
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>

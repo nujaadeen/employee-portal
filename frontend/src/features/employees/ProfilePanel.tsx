@@ -15,6 +15,7 @@ import { SkeletonRows } from '@/ui/Skeleton'
 import { StatusPill } from '@/ui/StatusPill'
 import { SummaryList } from '@/ui/SummaryList'
 import { FacebookIcon, GithubIcon, GoogleIcon } from '@/ui/BrandIcons'
+import { MfaBadge } from './MfaBadge'
 import { roleLabel } from './StatusLabel'
 
 const ICON: Record<string, React.ReactNode> = { google: <GoogleIcon />, github: <GithubIcon />, facebook: <FacebookIcon />, password: <Mail size={20} /> }
@@ -59,8 +60,10 @@ export function ProfilePanel({ id, myId, onEdit }: { id: string; myId?: string; 
               <li key={m.key} className="row signin">
                 <span className="signin__icon" aria-hidden="true">{ICON[m.key ?? ''] ?? <KeyRound size={20} />}</span>
                 <span className="grow">{m.label}</span>
-                {m.key === 'password' ? <StatusPill tone={m.mfa ? 'success' : 'warning'}>{m.mfa ? 'MFA on' : 'MFA off'}</StatusPill>
-                  : <StatusPill tone={m.linked ? 'success' : 'neutral'}>{m.linked ? 'Linked' : 'Not linked'}</StatusPill>}
+                <span className="signin__states">
+                  <StatusPill tone={m.linked ? 'success' : 'neutral'}>{m.linked ? 'Linked' : 'Not linked'}</StatusPill>
+                  <MfaBadge mfa={m.mfa} />
+                </span>
               </li>
             ))}
           </ul>

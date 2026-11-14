@@ -1,6 +1,6 @@
 # Backend gaps found while building the frontend
 
-All eight gaps are fixed by prompt 03 (see docs/api.md). The frontend still contains its workarounds; the follow-up frontend prompt removes them.
+All eight gaps are fixed by prompt 03 (see docs/api.md), and the frontend no longer contains any workaround (prompt 04).
 
 1. ~~No "project members" endpoint.~~ **Fixed:** `GET/POST /api/projects/{key}/members`, `DELETE /api/projects/{key}/members/{employeeId}`. Task create and update still reject a non-member assignee (`not-a-member`).
 2. ~~Branch and PR dialogs need a repository name, but `GET /api/repos` needs `repo:view`.~~ **Fixed:** `GET /api/projects/{key}/repos` (members with `task:view`). Branch and PR link calls accept only repositories linked to the task's project (`repo-not-linked`).
