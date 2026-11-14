@@ -1,0 +1,17 @@
+portal:
+  mail:
+    enabled: false
+  keycloak:
+    admin-enabled: false
+gitea:
+  webhook-secret: test-secret
+  base-url: http://gitea.test
+  token: test-token
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed
+logging:
+  level:
+    root: WARN
+    com.baracel: WARN
+    org.flywaydb: WARN

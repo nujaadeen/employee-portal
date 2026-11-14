@@ -67,9 +67,10 @@ public class GiteaWebhookService {
         return switch (e) {
             case "push" -> push(p);
             case "create" -> create(p);
-            case "pull_request" -> pullRequest(p);
             case "status" -> status(p);
-            default -> e.startsWith("pull_request_") || e.equals("pull_request_review") ? review(p) : 0;
+            // Gitea sends pull_request, pull_request_sync, _label, _assign, _review_request ... (payload has "action")
+            // and pull_request_approved / _rejected / _review_comment ... (payload has "review").
+            default -> e.startsWith("pull_request") ? (p.has("review") ? review(p) : pullRequest(p)) : 0;
         };
     }
 
@@ -207,6 +208,7 @@ public class GiteaWebhookService {
             n.repo = repo;
             n.prNumber = number;
             n.reviewerUsername = reviewer;
+            n.state = state;
             return reviews.save(n);
         });
         r.prTitle = title;

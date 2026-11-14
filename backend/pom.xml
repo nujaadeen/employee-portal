@@ -48,6 +48,16 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
+      <plugin>
+        <!-- Unit tests (*Test) and MockMvc + Testcontainers integration tests (*IT) both run in mvn verify. -->
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+            <include>**/*IT.java</include>
+          </includes>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>

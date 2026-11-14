@@ -5,8 +5,10 @@
 - [x] 3. Spring Boot project
 - [x] 4. Identity and security
 - [x] 5. Access module
-- [ ] 6. Employee and leave modules
-- [ ] 7. Task module
-- [ ] 8. Gitea module
-- [ ] 9. AI module (stub)
-- [ ] 10. Dashboard, seed data, contract, docs
+- [x] 6. Employee and leave modules
+- [x] 7. Task module
+- [x] 8. Gitea module
+- [x] 9. AI module (stub)
+- [x] 10. Dashboard, seed data, contract, docs
+
+Verification: see the report at the end of the prompt (mvn verify, docker compose, curl output).

@@ -92,6 +92,8 @@ services:
       GITEA__mailer__FROM: gitea@baracel.example
     ports:
       - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # lets Gitea call Spring running on the host
     volumes:
       - giteadata:/data
     healthcheck:
