@@ -1,5 +1,6 @@
 package com.baracel.portal.task.web;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.gitea.service.GiteaService;
 import com.baracel.portal.gitea.service.GiteaService.GitDetail;
@@ -25,19 +26,19 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @Tag(name = "Tasks")
 public class TaskController {
-    public record TaskCard(TaskView task, GitSummary git) {}
+    public record TaskCard(TaskView task, @Nullable GitSummary git) {}
     public record Column(TaskStatus status, String label, int count, List<TaskCard> tasks) {}
-    public record Board(ProjectDto project, SprintDto sprint, List<SprintDto> sprints, int taskCount, int linkedToGitea,
-                        Instant lastSyncedAt, List<Column> columns) {}
+    public record Board(ProjectDto project, @Nullable SprintDto sprint, List<SprintDto> sprints, int taskCount, int linkedToGitea,
+                        @Nullable Instant lastSyncedAt, List<Column> columns) {}
     public record TaskDetailResponse(TaskDetailDto task, GitDetail git) {}
 
-    public record CreateTaskRequest(@NotBlank String projectKey, @NotBlank String title, String description, Priority priority,
-                                    UUID assigneeId, LocalDate dueDate, String label, Long sprintId) {}
-    public record UpdateTaskRequest(String title, String description, Priority priority, UUID assigneeId, LocalDate dueDate,
-                                    String label, Long sprintId) {}
+    public record CreateTaskRequest(@NotBlank String projectKey, @NotBlank String title, @Nullable String description, @Nullable Priority priority,
+                                    @Nullable UUID assigneeId, @Nullable LocalDate dueDate, @Nullable String label, @Nullable Long sprintId) {}
+    public record UpdateTaskRequest(@Nullable String title, @Nullable String description, @Nullable Priority priority, @Nullable UUID assigneeId, @Nullable LocalDate dueDate,
+                                    @Nullable String label, @Nullable Long sprintId) {}
     public record StatusRequest(@NotNull TaskStatus status) {}
     public record SubtaskRequest(@NotBlank String title) {}
-    public record SubtaskUpdate(String title, Boolean done) {}
+    public record SubtaskUpdate(@Nullable String title, @Nullable Boolean done) {}
     public record CommentRequest(@NotBlank String body) {}
 
     private final TaskService service;

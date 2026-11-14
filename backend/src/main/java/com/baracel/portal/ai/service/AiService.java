@@ -1,5 +1,6 @@
 package com.baracel.portal.ai.service;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.ai.domain.*;
 import com.baracel.portal.ai.repo.*;
 import com.baracel.portal.ai.service.AiAssistantPort.*;
@@ -16,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AiService {
     public record SourceDto(String title, String collection) {}
     public record DraftDto(UUID id, String kind, String headline, String caption, List<String> hashtags, List<String> suggestedChannels) {}
-    public record MessageDto(UUID id, String role, String content, Instant createdAt, List<SourceDto> sources, DraftDto draft) {}
+    public record MessageDto(UUID id, String role, String content, Instant createdAt, List<SourceDto> sources, @Nullable DraftDto draft) {}
     public record ConversationDto(UUID id, String title, Instant updatedAt) {}
     public record ConversationDetail(UUID id, String title, List<MessageDto> messages) {}
     public record Exchange(MessageDto userMessage, MessageDto assistantMessage) {}

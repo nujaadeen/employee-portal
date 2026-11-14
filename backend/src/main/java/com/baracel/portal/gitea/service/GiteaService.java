@@ -1,5 +1,6 @@
 package com.baracel.portal.gitea.service;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.common.web.ApiException;
 import com.baracel.portal.gitea.domain.*;
@@ -21,12 +22,12 @@ import org.springframework.web.client.RestClientException;
 public class GiteaService {
     private static final Logger log = LoggerFactory.getLogger(GiteaService.class);
 
-    public record GitSummary(String repo, String branch, Integer prNumber, String prState, String checksStatus, int approvals) {}
-    public record LinkDto(String repo, String repoUrl, String branch, Integer prNumber, String prTitle, String prState, String prUrl,
-                          String checksStatus, int approvals, String lastSha) {}
-    public record CommitDto(String sha, String shortSha, String message, String author, Instant committedAt, String url) {}
-    public record GitDetail(boolean webhookLive, String baseUrl, List<LinkDto> links, List<CommitDto> commits) {}
-    public record RepoDto(Long projectId, String fullName, String defaultBranch, String htmlUrl) {}
+    public record GitSummary(String repo, String branch, @Nullable Integer prNumber, @Nullable String prState, @Nullable String checksStatus, int approvals) {}
+    public record LinkDto(String repo, @Nullable String repoUrl, String branch, @Nullable Integer prNumber, @Nullable String prTitle, @Nullable String prState, @Nullable String prUrl,
+                          @Nullable String checksStatus, int approvals, @Nullable String lastSha) {}
+    public record CommitDto(String sha, String shortSha, String message, @Nullable String author, Instant committedAt, @Nullable String url) {}
+    public record GitDetail(boolean webhookLive, @Nullable String baseUrl, List<LinkDto> links, List<CommitDto> commits) {}
+    public record RepoDto(Long projectId, String fullName, String defaultBranch, @Nullable String htmlUrl) {}
 
     private final TaskService tasks;
     private final GitRepositoryRepository repositories;

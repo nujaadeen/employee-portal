@@ -1,5 +1,6 @@
 package com.baracel.portal.gitea.web;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.gitea.service.GiteaService;
 import com.baracel.portal.gitea.service.GiteaService.LinkDto;
@@ -14,8 +15,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @Tag(name = "Gitea")
 public class GiteaController {
-    public record BranchRequest(String repo) {}
-    public record LinkPrRequest(String repo, @NotNull Integer prNumber) {}
+    public record BranchRequest(@Nullable String repo) {}
+    public record LinkPrRequest(@Nullable String repo, @NotNull Integer prNumber) {}
 
     private final GiteaService service;
 

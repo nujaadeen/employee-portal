@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @Tag(name = "Dashboard")
 public class DashboardController {
-    public record AnnouncementRequest(@NotBlank String title, String body, String postedBy) {}
+    public record AnnouncementRequest(@NotBlank String title, @Nullable String body, @Nullable String postedBy) {}
 
     private final DashboardService service;
 

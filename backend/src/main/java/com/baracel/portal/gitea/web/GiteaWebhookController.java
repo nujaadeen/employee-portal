@@ -1,5 +1,6 @@
 package com.baracel.portal.gitea.web;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.common.web.ApiException;
 import com.baracel.portal.gitea.service.GiteaProperties;
 import com.baracel.portal.gitea.service.GiteaWebhookService;
@@ -19,7 +20,7 @@ import tools.jackson.databind.ObjectMapper;
 @RequestMapping("/api/integrations/gitea")
 @Tag(name = "Gitea")
 public class GiteaWebhookController {
-    public record WebhookResult(String event, int tasksUpdated) {}
+    public record WebhookResult(@Nullable String event, int tasksUpdated) {}
 
     private final GiteaProperties props;
     private final GiteaWebhookService service;

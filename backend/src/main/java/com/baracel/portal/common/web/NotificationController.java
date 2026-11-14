@@ -16,7 +16,7 @@ public class NotificationController {
 
     public NotificationController(NotificationService service) { this.service = service; }
 
-    public record NotificationDto(long id, String type, String title, String body, String link, boolean read, Instant createdAt) {
+    public record NotificationDto(long id, String type, String title, @Nullable String body, @Nullable String link, boolean read, Instant createdAt) {
         static NotificationDto of(Notification n) {
             return new NotificationDto(n.id, n.type, n.title, n.body, n.link, n.readAt != null, n.createdAt);
         }

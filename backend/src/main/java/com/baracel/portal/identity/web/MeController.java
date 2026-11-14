@@ -1,5 +1,6 @@
 package com.baracel.portal.identity.web;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.access.service.AccessService;
 import com.baracel.portal.access.service.AccessService.SignInMethodInfo;
 import com.baracel.portal.common.security.CurrentUser;
@@ -22,8 +23,8 @@ public class MeController {
     private static final Logger log = LoggerFactory.getLogger(MeController.class);
 
     public record ManagerRef(UUID id, String name) {}
-    public record MeResponse(UUID id, String code, String name, String email, String jobTitle, String department,
-                             String status, List<String> roles, List<String> permissions, ManagerRef manager,
+    public record MeResponse(UUID id, String code, String name, String email, @Nullable String jobTitle, @Nullable String department,
+                             String status, List<String> roles, List<String> permissions, @Nullable ManagerRef manager,
                              List<SignInMethodInfo> signInMethods, long unreadNotifications) {}
 
     private final EmployeeService employees;

@@ -1,5 +1,6 @@
 package com.baracel.portal.access.web;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.access.service.AccessService;
 import com.baracel.portal.access.service.AccessService.*;
 import com.baracel.portal.common.security.CurrentUser;
@@ -29,7 +30,7 @@ public class AccessController {
     @GetMapping("/roles")
     public List<RoleSummary> roles() { return service.roles(); }
 
-    public record CreateRoleRequest(@NotNull String name, String description) {}
+    public record CreateRoleRequest(@NotNull String name, @Nullable String description) {}
 
     @PostMapping("/roles")
     public org.springframework.http.ResponseEntity<RoleSummary> createRole(CurrentUser me, @Valid @RequestBody CreateRoleRequest body) {

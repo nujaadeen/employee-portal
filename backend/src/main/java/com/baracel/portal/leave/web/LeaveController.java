@@ -1,5 +1,6 @@
 package com.baracel.portal.leave.web;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.leave.service.LeaveService;
 import com.baracel.portal.leave.service.LeaveService.*;
@@ -25,8 +26,8 @@ public class LeaveController {
 
     public LeaveController(LeaveService service) { this.service = service; }
 
-    public record CreateLeaveRequest(@NotBlank String type, @NotNull LocalDate from, @NotNull LocalDate to, String reason) {}
-    public record DecisionRequest(String note) {}
+    public record CreateLeaveRequest(@NotBlank String type, @NotNull LocalDate from, @NotNull LocalDate to, @Nullable String reason) {}
+    public record DecisionRequest(@Nullable String note) {}
 
     @GetMapping("/balances")
     @PreAuthorize("hasAuthority('leave:request')")

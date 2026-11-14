@@ -1,5 +1,6 @@
 package com.baracel.portal.common.service;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.common.domain.Announcement;
 import com.baracel.portal.common.repo.AnnouncementRepository;
 import com.baracel.portal.common.security.CurrentUser;
@@ -26,9 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class DashboardService {
     public record AnnualLeave(int left, int entitled) {}
     public record OpenTasks(int count, int dueThisWeek) {}
-    public record DueTask(String key, String title, LocalDate dueDate, TaskStatus status, String label) {}
-    public record AnnouncementDto(Long id, String title, String body, String postedBy, Instant createdAt) {}
-    public record Dashboard(String firstName, LocalDate today, String department, AnnualLeave annualLeave, OpenTasks openTasks,
+    public record DueTask(String key, String title, LocalDate dueDate, TaskStatus status, @Nullable String label) {}
+    public record AnnouncementDto(Long id, String title, @Nullable String body, String postedBy, Instant createdAt) {}
+    public record Dashboard(String firstName, LocalDate today, @Nullable String department, @Nullable AnnualLeave annualLeave, OpenTasks openTasks,
                             List<DueTask> nextDue, int pullRequestsAwaitingReview, List<OutEntry> outToday,
                             List<AnnouncementDto> announcements) {}
 

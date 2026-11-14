@@ -1,5 +1,6 @@
 package com.baracel.portal.ai.web;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.ai.service.AiService;
 import com.baracel.portal.ai.service.AiService.*;
 import com.baracel.portal.common.security.CurrentUser;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @PreAuthorize("hasAuthority('ai:chat')")
 @Tag(name = "AI assistant")
 public class AiController {
-    public record NewConversation(String title) {}
+    public record NewConversation(@Nullable String title) {}
     public record SendMessage(@NotBlank String message) {}
     public record PublishRequest(@NotEmpty List<String> channels) {}
 

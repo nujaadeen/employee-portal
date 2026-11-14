@@ -1,5 +1,6 @@
 package com.baracel.portal.employee.service;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.access.service.AccessService;
 import com.baracel.portal.access.service.KeycloakAdmin;
 import com.baracel.portal.access.service.PortalRoles;
@@ -28,8 +29,8 @@ public class EmployeeService {
     /** Roles HR may hand out. HR and ADMIN need the access:manage permission. */
     private static final Set<String> HR_ASSIGNABLE = Set.of(PortalRoles.EMPLOYEE, PortalRoles.SALES, PortalRoles.ENGINEER, PortalRoles.MANAGER);
 
-    public record UpdateEmployee(String jobTitle, String department, UUID managerId, String phone, String location,
-                                 String giteaUsername, EmployeeStatus status, LocalDate joinedOn) {}
+    public record UpdateEmployee(@Nullable String jobTitle, @Nullable String department, @Nullable UUID managerId, @Nullable String phone, @Nullable String location,
+                                 @Nullable String giteaUsername, @Nullable EmployeeStatus status, @Nullable LocalDate joinedOn) {}
     public record InviteEmployee(String email, String firstName, String lastName, String jobTitle, String department,
                                  UUID managerId, String role) {}
     public record ApproveEmployee(String role, UUID managerId, String jobTitle, String department) {}

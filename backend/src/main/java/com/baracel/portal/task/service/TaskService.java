@@ -1,5 +1,6 @@
 package com.baracel.portal.task.service;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.common.service.AuditService;
 import com.baracel.portal.common.service.NotificationService;
@@ -17,20 +18,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TaskService {
-    public record ProjectDto(Long id, String key, String name, int members, SprintDto activeSprint) {}
+    public record ProjectDto(Long id, String key, String name, int members, @Nullable SprintDto activeSprint) {}
     public record SprintDto(Long id, String name, LocalDate startsOn, LocalDate endsOn, boolean active) {}
-    public record TaskView(Long id, String key, String title, String label, TaskStatus status, Priority priority, LocalDate dueDate,
-                           UUID assigneeId, String assigneeName, String assigneeInitials, int subtasksDone, int subtasksTotal,
-                           Long sprintId) {}
+    public record TaskView(Long id, String key, String title, @Nullable String label, TaskStatus status, Priority priority, @Nullable LocalDate dueDate,
+                           @Nullable UUID assigneeId, @Nullable String assigneeName, @Nullable String assigneeInitials, int subtasksDone, int subtasksTotal,
+                           @Nullable Long sprintId) {}
     public record SubtaskDto(Long id, String title, boolean done) {}
     public record CommentDto(Long id, UUID authorId, String author, String body, Instant createdAt) {}
     public record ActivityDto(Long id, String actor, String kind, String message, Instant createdAt) {}
-    public record TaskDetailDto(TaskView task, String projectKey, String description, UUID reporterId, String reporterName,
-                                String sprintName, List<SubtaskDto> subtasks, List<CommentDto> comments, List<ActivityDto> activity) {}
+    public record TaskDetailDto(TaskView task, String projectKey, @Nullable String description, @Nullable UUID reporterId, @Nullable String reporterName,
+                                @Nullable String sprintName, List<SubtaskDto> subtasks, List<CommentDto> comments, List<ActivityDto> activity) {}
     public record BoardData(ProjectDto project, SprintDto sprint, List<SprintDto> sprints, List<TaskView> tasks) {}
     public record TaskRef(Long id, String key, TaskStatus status, Long projectId, String title, UUID assigneeId, UUID reporterId) {}
 
-    public record MemberDto(UUID id, String name, String jobTitle, String initials) {}
+    public record MemberDto(UUID id, String name, @Nullable String jobTitle, String initials) {}
 
     public record CreateTask(String projectKey, String title, String description, Priority priority, UUID assigneeId,
                              LocalDate dueDate, String label, Long sprintId) {}

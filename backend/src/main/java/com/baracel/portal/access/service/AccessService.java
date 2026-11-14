@@ -1,5 +1,6 @@
 package com.baracel.portal.access.service;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.access.domain.CustomRole;
 import com.baracel.portal.access.domain.Permission;
 import com.baracel.portal.access.domain.RolePermission;
@@ -21,10 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccessService {
     private static final Logger log = LoggerFactory.getLogger(AccessService.class);
 
-    public record RoleSummary(String name, String description, boolean builtIn, Integer people) {}
-    public record MatrixPermission(String key, String module, String action, String label, String hint, String group,
+    public record RoleSummary(String name, @Nullable String description, boolean builtIn, @Nullable Integer people) {}
+    public record MatrixPermission(String key, String module, String action, String label, @Nullable String hint, String group,
                                    String row, String column, boolean granted) {}
-    public record RoleMatrix(String role, Integer people, List<MatrixPermission> permissions) {}
+    public record RoleMatrix(String role, @Nullable Integer people, List<MatrixPermission> permissions) {}
     public record IdentityProviderInfo(String alias, String displayName, boolean enabled, boolean editable) {}
     public record SignInMethodInfo(String key, String label, boolean linked, MfaState mfa) {}
     public record AccessSettings(String defaultRoleForNewSignUps, String approver, int sessionLengthHours) {}

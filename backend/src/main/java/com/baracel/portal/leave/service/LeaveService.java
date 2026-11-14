@@ -1,5 +1,6 @@
 package com.baracel.portal.leave.service;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.common.service.NotificationService;
 import com.baracel.portal.common.web.ApiException;
@@ -19,12 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class LeaveService {
-    public record BalanceDto(String type, String name, Integer entitled, int used, int pending, Integer left) {}
+    public record BalanceDto(String type, String name, @Nullable Integer entitled, int used, int pending, @Nullable Integer left) {}
     public record LeaveRequestDto(UUID id, UUID employeeId, String employeeName, String type, String typeName, LocalDate from,
-                                  LocalDate to, int days, String reason, LeaveStatus status, String decidedBy, Instant decidedAt,
-                                  String note, Instant createdAt) {}
+                                  LocalDate to, int days, @Nullable String reason, LeaveStatus status, @Nullable String decidedBy, @Nullable Instant decidedAt,
+                                  @Nullable String note, Instant createdAt) {}
     public record CreateLeave(String type, LocalDate from, LocalDate to, String reason) {}
-    public record Preview(int workingDays, Integer balanceAfter, List<String> overlaps, boolean overlapsOwnRequest) {}
+    public record Preview(int workingDays, @Nullable Integer balanceAfter, List<String> overlaps, boolean overlapsOwnRequest) {}
     public record CalendarEntry(UUID employeeId, String name, String initials, String type, LocalDate from, LocalDate to, LeaveStatus status) {}
     public record OutEntry(UUID employeeId, String name, String initials, String typeName, LocalDate to, LocalDate backOn) {}
 
@@ -49,7 +50,7 @@ public class LeaveService {
         this.clock = clock;
     }
 
-    public record LeaveTypeInfo(String code, String name, Integer defaultDays) {}
+    public record LeaveTypeInfo(String code, String name, @Nullable Integer defaultDays) {}
 
     @Transactional(readOnly = true)
     public List<LeaveTypeInfo> leaveTypes() {

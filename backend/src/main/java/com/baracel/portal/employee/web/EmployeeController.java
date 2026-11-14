@@ -1,5 +1,6 @@
 package com.baracel.portal.employee.web;
 
+import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.access.service.AccessService;
 import com.baracel.portal.access.service.AccessService.SignInMethodInfo;
 import com.baracel.portal.access.service.KeycloakAdmin;
@@ -35,19 +36,19 @@ public class EmployeeController {
 
     /** Directory scope fills only the first five fields. Team and records scopes add the rest. */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record EmployeeItem(UUID id, String name, String jobTitle, String department, String email,
-                               String code, String role, EmployeeStatus status, LocalDate joinedOn, UUID managerId,
-                               String managerName, Integer annualLeaveLeft, String phone, String location, String giteaUsername) {}
+    public record EmployeeItem(UUID id, String name, @Nullable String jobTitle, @Nullable String department, String email,
+                               @Nullable String code, @Nullable String role, @Nullable EmployeeStatus status, @Nullable LocalDate joinedOn, @Nullable UUID managerId,
+                               @Nullable String managerName, @Nullable Integer annualLeaveLeft, @Nullable String phone, @Nullable String location, @Nullable String giteaUsername) {}
 
-    public record EmployeePage(List<EmployeeItem> items, int page, int size, long total, Map<String, Long> statusCounts) {}
+    public record EmployeePage(List<EmployeeItem> items, int page, int size, long total, @Nullable Map<String, Long> statusCounts) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record EmployeeDetail(EmployeeItem employee, List<String> roles, List<SignInMethodInfo> signInMethods,
+    public record EmployeeDetail(EmployeeItem employee, @Nullable List<String> roles, @Nullable List<SignInMethodInfo> signInMethods,
                                  List<LeaveRequestDto> recentLeave) {}
 
     public record InviteRequest(@NotBlank @Email String email, @NotBlank String firstName, @NotBlank String lastName,
-                                String jobTitle, String department, UUID managerId, String role) {}
-    public record ApproveRequest(@NotBlank String role, UUID managerId, String jobTitle, String department) {}
+                                @Nullable String jobTitle, @Nullable String department, @Nullable UUID managerId, @Nullable String role) {}
+    public record ApproveRequest(@NotBlank String role, @Nullable UUID managerId, @Nullable String jobTitle, @Nullable String department) {}
 
     private final EmployeeService service;
     private final LeaveService leave;
