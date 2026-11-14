@@ -1,0 +1,25 @@
+.tasks-bar { flex-wrap: wrap; margin-bottom: var(--space-4); }
+.tasks-bar .field { min-width: 160px; flex-direction: row; align-items: center; }
+.tasks-bar .field .field__control { height: 44px; }
+.icon-btn--on { background: var(--primary-soft-bg); color: var(--primary-soft-text); border-color: var(--primary); }
+.board-hint { font-size: var(--text-xs); margin-bottom: var(--space-3); }
+.board { display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 20px; align-items: start; overflow-x: auto; padding-bottom: var(--space-3); }
+.board__col { background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-4); min-height: 160px; }
+.board__head { display: flex; justify-content: space-between; margin-bottom: var(--space-3); }
+.board__cards { display: flex; flex-direction: column; gap: var(--space-3); }
+.board__empty { text-align: center; padding: var(--space-4) 0; }
+.task-card { background: var(--bg-card-raised); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); cursor: grab; }
+.task-card:focus-within { border-color: var(--focus-ring); }
+.task-card__title { color: var(--text-primary); font-weight: var(--weight-semibold); font-size: 15px; line-height: 1.35; text-decoration: none; display: inline-block; min-height: 24px; }
+.task-card__title:hover { text-decoration: underline; }
+.git-chips { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.git-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: var(--text-xs); max-width: 100%; min-width: 0; }
+.git-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.git-chip--branch { background: var(--bg-inset); color: var(--text-secondary); }
+.git-chip--success { background: var(--success-bg); color: var(--success); }
+.git-chip--warning { background: var(--warning-bg); color: var(--warning); }
+.git-chip--danger { background: var(--danger-bg); color: var(--danger); }
+.git-chip--neutral { background: var(--bg-inset); color: var(--text-primary); }
+.timeline__day { padding: var(--space-3) 0; border-top: 1px solid var(--border-subtle); }
+.timeline__day:first-child { border-top: 0; }
+@media (max-width: 860px) { .board { grid-template-columns: repeat(4, 80vw); } }

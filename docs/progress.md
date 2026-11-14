@@ -7,8 +7,8 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 1. Project setup (Vite, tokens alias, src/ui kit, styleguide, hex lint)
 - [x] 2. Auth (PKCE, in-memory tokens, typed API client, useMe, Can)
 - [x] 3. App shell and navigation, status pages
-- [ ] 4. Screens
-- [ ] 5. Keycloak login theme
+- [x] 4. Screens
+- [x] 5. Keycloak login theme
 - [ ] 6. Tests (Vitest, Playwright)
 - [ ] 7. Visual check
 - [ ] 8. Docs

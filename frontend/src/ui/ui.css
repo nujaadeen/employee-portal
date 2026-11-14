@@ -190,8 +190,8 @@ table.table { width: 100%; border-collapse: collapse; }
 .table td { padding: var(--space-3); border-top: 1px solid var(--border-subtle); vertical-align: middle; font-size: var(--text-sm); }
 .table tr[aria-selected="true"] td { background: var(--bg-hover); }
 .table .person { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
-.table .person strong { display: block; font-weight: var(--weight-semibold); }
-.table .person span { color: var(--text-secondary); font-size: var(--text-sm); }
+.table .person__name { display: block; font-weight: var(--weight-semibold); color: var(--text-primary); }
+.table .person__sub { display: block; color: var(--text-secondary); font-size: var(--text-sm); }
 .table .row-btn { background: none; border: 0; text-align: left; padding: 0; cursor: pointer; width: 100%; }
 .stat-value { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: var(--weight-semibold); margin: 14px 0 4px; }
 .stat-icon { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; }

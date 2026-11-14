@@ -1,0 +1,16 @@
+.emp-stats { margin-bottom: 20px; }
+.emp-stats > * { flex: 1 1 200px; }
+.emp-main { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.emp-list { flex: 2 1 560px; }
+.emp-panel { flex: 1 1 340px; max-width: 420px; }
+.emp-toolbar { flex-wrap: wrap; }
+.emp-toolbar .search { min-width: 220px; flex: 1 1 220px; }
+.emp-chips { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
+.emp-chips .tab[data-on="true"] { background: var(--primary); border-color: var(--primary); color: var(--text-on-primary); }
+.emp-waiting { margin-bottom: 20px; }
+.emp-waiting__row { padding: var(--space-2) 0; border-top: 1px solid var(--border-subtle); }
+.emp-waiting__row:first-child { border-top: 0; }
+.signin { padding: var(--space-2) 0; }
+.signin__icon { width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--bg-inset); display: inline-flex; align-items: center; justify-content: center; color: var(--text-secondary); flex: none; }
+.profile-panel .card__title { word-break: break-word; }
+@media (max-width: 900px) { .emp-panel { max-width: none; flex-basis: 100%; } }

@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 
-type Props = Omit<HTMLAttributes<HTMLElement>, 'title'> & { title?: ReactNode; subtitle?: ReactNode; action?: ReactNode; as?: 'section' | 'div' }
+type Props = Omit<HTMLAttributes<HTMLElement>, 'title'> & { title?: ReactNode; subtitle?: ReactNode; action?: ReactNode; as?: 'section' | 'div' | 'aside' | 'nav' }
 
 export function Card({ title, subtitle, action, as: Tag = 'section', children, className = '', ...rest }: Props) {
   return (

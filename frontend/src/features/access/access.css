@@ -1,0 +1,16 @@
+.access { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; margin-bottom: 20px; }
+.access__roles { flex: 0 1 280px; }
+.access__matrix { flex: 1 1 520px; min-width: 0; }
+.role-btn { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-3); border-radius: var(--radius-md); background: transparent; border: 0; cursor: pointer; font-size: 15px; text-align: left; }
+.role-btn:hover { background: var(--bg-hover); }
+.role-btn[aria-current="true"] { background: var(--primary-soft-bg); color: var(--primary-soft-text); }
+.matrix { min-width: 560px; }
+.matrix__col { text-align: center !important; }
+.matrix__group { padding-top: var(--space-5) !important; }
+.matrix__row { text-align: left; font-weight: var(--weight-regular); }
+.matrix__row strong { font-weight: var(--weight-semibold); font-size: 15px; }
+.matrix__cell { text-align: center; }
+.matrix__box { width: 44px; height: 44px; background: none; border: 0; border-radius: var(--radius-md); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.matrix__box:hover { background: var(--bg-hover); }
+.idp { padding: var(--space-3) 0; border-top: 1px solid var(--border-subtle); }
+.idp:first-child { border-top: 0; }
