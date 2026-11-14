@@ -26,6 +26,7 @@ public class AccessService {
                                    String row, String column, boolean granted) {}
     public record RoleMatrix(String role, Integer people, List<MatrixPermission> permissions) {}
     public record IdentityProviderInfo(String alias, String displayName, boolean enabled, boolean editable) {}
+    public record SignInMethodInfo(String key, String label, boolean linked, MfaState mfa) {}
     public record AccessSettings(String defaultRoleForNewSignUps, String approver, int sessionLengthHours) {}
 
     private static final java.util.regex.Pattern ROLE_NAME = java.util.regex.Pattern.compile("^[A-Z_]{3,30}$");
@@ -77,6 +78,18 @@ public class AccessService {
     }
 
     public void clearCache() { cache = null; }
+
+    /** Linked sign-in methods of a person, read from Keycloak. Social providers are PROVIDER_MANAGED, the password depends on OTP or WebAuthn. */
+    public List<SignInMethodInfo> signInMethods(String keycloakUserId) {
+        Set<String> linked = keycloak.linkedProviders(keycloakUserId);
+        KeycloakAdmin.CredentialInfo cred = keycloak.credentials(keycloakUserId);
+        List<SignInMethodInfo> out = new ArrayList<>();
+        out.add(new SignInMethodInfo("google", "Google", linked.contains("google"), MfaState.PROVIDER_MANAGED));
+        out.add(new SignInMethodInfo("github", "GitHub", linked.contains("github"), MfaState.PROVIDER_MANAGED));
+        out.add(new SignInMethodInfo("facebook", "Facebook", linked.contains("facebook"), MfaState.PROVIDER_MANAGED));
+        out.add(new SignInMethodInfo("password", "Email and password", cred.password(), cred.otp() ? MfaState.ENABLED : MfaState.DISABLED));
+        return out;
+    }
 
     // ---- admin screens ----
 

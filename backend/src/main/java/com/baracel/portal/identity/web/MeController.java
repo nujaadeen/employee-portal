@@ -1,6 +1,7 @@
 package com.baracel.portal.identity.web;
 
-import com.baracel.portal.access.service.KeycloakAdmin;
+import com.baracel.portal.access.service.AccessService;
+import com.baracel.portal.access.service.AccessService.SignInMethodInfo;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.common.service.NotificationService;
 import com.baracel.portal.employee.service.EmployeeService;
@@ -21,18 +22,17 @@ public class MeController {
     private static final Logger log = LoggerFactory.getLogger(MeController.class);
 
     public record ManagerRef(UUID id, String name) {}
-    public record SignInMethod(String key, String label, boolean linked, Boolean mfa) {}
     public record MeResponse(UUID id, String code, String name, String email, String jobTitle, String department,
                              String status, List<String> roles, List<String> permissions, ManagerRef manager,
-                             List<SignInMethod> signInMethods, long unreadNotifications) {}
+                             List<SignInMethodInfo> signInMethods, long unreadNotifications) {}
 
     private final EmployeeService employees;
-    private final KeycloakAdmin keycloak;
+    private final AccessService access;
     private final NotificationService notifications;
 
-    public MeController(EmployeeService employees, KeycloakAdmin keycloak, NotificationService notifications) {
+    public MeController(EmployeeService employees, AccessService access, NotificationService notifications) {
         this.employees = employees;
-        this.keycloak = keycloak;
+        this.access = access;
         this.notifications = notifications;
     }
 
@@ -47,19 +47,9 @@ public class MeController {
     }
 
     /** Linked sign-in methods come from the Keycloak Admin API. If Keycloak cannot be reached the list is empty. */
-    private List<SignInMethod> signInMethods(String keycloakId) {
+    private List<SignInMethodInfo> signInMethods(String keycloakId) {
         try {
-            Set<String> linked = keycloak.linkedProviders(keycloakId);
-            KeycloakAdmin.CredentialInfo cred = keycloak.credentials(keycloakId);
-            Map<String, String> names = new LinkedHashMap<>();
-            names.put("google", "Google");
-            names.put("github", "GitHub");
-            names.put("facebook", "Facebook");
-            List<SignInMethod> out = names.entrySet().stream()
-                    .map(en -> new SignInMethod(en.getKey(), en.getValue(), linked.contains(en.getKey()), null))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            out.add(new SignInMethod("password", "Email and password", cred.password(), cred.otp()));
-            return out;
+            return access.signInMethods(keycloakId);
         } catch (RuntimeException ex) {
             log.warn("Could not read sign-in methods from Keycloak: {}", ex.getMessage());
             return List.of();

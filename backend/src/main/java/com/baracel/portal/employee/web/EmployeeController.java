@@ -1,5 +1,7 @@
 package com.baracel.portal.employee.web;
 
+import com.baracel.portal.access.service.AccessService;
+import com.baracel.portal.access.service.AccessService.SignInMethodInfo;
 import com.baracel.portal.access.service.KeycloakAdmin;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.common.web.ApiException;
@@ -39,10 +41,8 @@ public class EmployeeController {
 
     public record EmployeePage(List<EmployeeItem> items, int page, int size, long total, Map<String, Long> statusCounts) {}
 
-    public record SignInMethodDto(String key, String label, boolean linked, Boolean mfa) {}
-
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record EmployeeDetail(EmployeeItem employee, List<String> roles, List<SignInMethodDto> signInMethods,
+    public record EmployeeDetail(EmployeeItem employee, List<String> roles, List<SignInMethodInfo> signInMethods,
                                  List<LeaveRequestDto> recentLeave) {}
 
     public record InviteRequest(@NotBlank @Email String email, @NotBlank String firstName, @NotBlank String lastName,
@@ -52,8 +52,10 @@ public class EmployeeController {
     private final EmployeeService service;
     private final LeaveService leave;
     private final KeycloakAdmin keycloak;
+    private final AccessService access;
 
-    public EmployeeController(EmployeeService service, LeaveService leave, KeycloakAdmin keycloak) {
+    public EmployeeController(EmployeeService service, LeaveService leave, KeycloakAdmin keycloak, AccessService access) {
+        this.access = access;
         this.service = service;
         this.leave = leave;
         this.keycloak = keycloak;
@@ -89,16 +91,11 @@ public class EmployeeController {
         EmployeeItem item = item(v, Scope.ALL, managers, leave.annualLeft(List.of(v.id())));
         boolean hr = me.has("employee:records");
         List<String> roles = null;
-        List<SignInMethodDto> methods = null;
+        List<SignInMethodInfo> methods = null;
         if (hr) {
             try {
                 roles = keycloak.userRoles(v.keycloakId()).stream().sorted().toList();
-                Set<String> linked = keycloak.linkedProviders(v.keycloakId());
-                KeycloakAdmin.CredentialInfo c = keycloak.credentials(v.keycloakId());
-                methods = List.of(new SignInMethodDto("google", "Google", linked.contains("google"), null),
-                        new SignInMethodDto("github", "GitHub", linked.contains("github"), null),
-                        new SignInMethodDto("facebook", "Facebook", linked.contains("facebook"), null),
-                        new SignInMethodDto("password", "Email and password", c.password(), c.otp()));
+                methods = access.signInMethods(v.keycloakId());
             } catch (RuntimeException e) {
                 log.warn("Keycloak details unavailable for {}: {}", v.code(), e.getMessage());
             }

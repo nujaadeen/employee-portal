@@ -37,6 +37,10 @@ class SecurityIT extends IntegrationTest {
                 .andExpect(jsonPath("$.permissions", hasItems("leave:request", "ai:knowledge:product", "social:publish:company")))
                 .andExpect(jsonPath("$.permissions", not(hasItems("leave:approve", "employee:team", "employee:records", "access:manage"))))
                 .andExpect(jsonPath("$.signInMethods[?(@.key=='google')].linked").value(true))
+                .andExpect(jsonPath("$.signInMethods[?(@.key=='google')].mfa").value("PROVIDER_MANAGED"))
+                .andExpect(jsonPath("$.signInMethods[?(@.key=='github')].mfa").value("PROVIDER_MANAGED"))
+                .andExpect(jsonPath("$.signInMethods[?(@.key=='facebook')].mfa").value("PROVIDER_MANAGED"))
+                .andExpect(jsonPath("$.signInMethods[?(@.key=='password')].mfa").value("DISABLED"))
                 .andExpect(jsonPath("$.unreadNotifications").value(0));
     }
 

@@ -109,7 +109,12 @@ class EmployeeIT extends IntegrationTest {
         mvc.perform(getAs("ruth.mensah", "/api/employees/" + karim)).andExpect(status().isForbidden());
         mvc.perform(getAs("lena.fischer", "/api/employees/" + karim)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.roles", hasItem("EMPLOYEE")))
-                .andExpect(jsonPath("$.signInMethods", hasSize(4)));
+                .andExpect(jsonPath("$.signInMethods", hasSize(4)))
+                .andExpect(jsonPath("$.signInMethods[?(@.key=='password')].mfa").value("DISABLED"))
+                .andExpect(jsonPath("$.signInMethods[?(@.key=='google')].mfa").value("PROVIDER_MANAGED"));
+        ((com.baracel.portal.support.FakeKeycloakAdmin) keycloak).otp = true;   // the person now has an OTP or WebAuthn credential
+        mvc.perform(getAs("lena.fischer", "/api/employees/" + karim)).andExpect(jsonPath("$.signInMethods[?(@.key=='password')].mfa").value("ENABLED"));
+        mvc.perform(getAs("karim.aziz", "/api/me")).andExpect(jsonPath("$.signInMethods[?(@.key=='password')].mfa").value("ENABLED"));
         mvc.perform(getAs("lena.fischer", "/api/employees/00000000-0000-0000-0000-000000000000")).andExpect(status().isNotFound());
     }
 

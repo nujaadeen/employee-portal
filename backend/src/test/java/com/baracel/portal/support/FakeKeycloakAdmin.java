@@ -12,7 +12,8 @@ public class FakeKeycloakAdmin implements KeycloakAdmin {
     public final Map<String, Integer> roleUsers = new HashMap<>();
 
     @Override public Set<String> linkedProviders(String userId) { return Set.of("google"); }
-    @Override public CredentialInfo credentials(String userId) { return new CredentialInfo(true, false); }
+    public boolean otp = false;
+    @Override public CredentialInfo credentials(String userId) { return new CredentialInfo(true, otp); }
     @Override public List<IdpInfo> identityProviders() {
         return idpEnabled.entrySet().stream().map(e -> new IdpInfo(e.getKey(), e.getKey(), e.getValue())).toList();
     }
@@ -36,6 +37,7 @@ public class FakeKeycloakAdmin implements KeycloakAdmin {
         rolesSet.clear();
         createdEmails.clear();
         actionEmails.clear();
+        otp = false;
         roleUsers.clear();
         roles.removeIf(r -> !List.of("EMPLOYEE", "MANAGER", "HR", "SALES", "ENGINEER", "ADMIN", "offline_access").contains(r));
     }

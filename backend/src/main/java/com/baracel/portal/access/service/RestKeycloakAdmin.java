@@ -64,7 +64,7 @@ public class RestKeycloakAdmin implements KeycloakAdmin {
         boolean pw = false, otp = false;
         for (Map<String, Object> m : get("/users/" + userId + "/credentials").retrieve().body(LIST)) {
             if ("password".equals(m.get("type"))) pw = true;
-            if ("otp".equals(m.get("type"))) otp = true;
+            if ("otp".equals(m.get("type")) || "webauthn".equals(m.get("type")) || "webauthn-passwordless".equals(m.get("type"))) otp = true;   // OTP or WebAuthn
         }
         return new CredentialInfo(pw, otp);
     }
