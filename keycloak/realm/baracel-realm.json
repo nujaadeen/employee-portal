@@ -571,7 +571,8 @@
           "manage-users",
           "view-realm",
           "view-identity-providers",
-          "manage-identity-providers"
+          "manage-identity-providers",
+          "manage-realm"
         ]
       }
     }

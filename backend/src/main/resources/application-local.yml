@@ -2,3 +2,6 @@
 spring:
   flyway:
     locations: classpath:db/migration,classpath:db/seed
+    # The demo seed is version 1000. Migrations added after a local database was seeded (V7 and later) would otherwise
+    # fail validation as "resolved but not applied". Only the local profile allows this; production has no seed.
+    out-of-order: true
