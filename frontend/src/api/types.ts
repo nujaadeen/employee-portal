@@ -1,0 +1,20 @@
+import type { components } from './schema'
+
+type S = components['schemas']
+export type Me = S['MeResponse']
+export type Dashboard = S['Dashboard']
+export type LeaveRequest = S['LeaveRequestDto']
+export type Balance = S['BalanceDto']
+export type CalendarEntry = S['CalendarEntry']
+export type EmployeeItem = S['EmployeeItem']
+export type EmployeePage = S['EmployeePage']
+export type EmployeeDetail = S['EmployeeDetail']
+export type Board = S['Board']
+export type TaskCard = S['TaskCard']
+export type TaskDetail = S['TaskDetailResponse']
+export type AiAccess = S['AiAccess']
+export type Notification = S['NotificationDto']
+export type RoleSummary = S['RoleSummary']
+export type RoleMatrix = S['RoleMatrix']
+export type IdentityProvider = S['IdentityProviderInfo']
+export type TaskStatus = NonNullable<S['StatusRequest']['status']>

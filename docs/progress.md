@@ -1,14 +1,14 @@
-# Progress: prompt 01 (backend, realm, infra)
+# Progress
 
-- [x] 1. Infrastructure (infra/docker-compose.yml, .env.example)
-- [x] 2. Keycloak realm (keycloak/realm/baracel-realm.json)
-- [x] 3. Spring Boot project
-- [x] 4. Identity and security
-- [x] 5. Access module
-- [x] 6. Employee and leave modules
-- [x] 7. Task module
-- [x] 8. Gitea module
-- [x] 9. AI module (stub)
-- [x] 10. Dashboard, seed data, contract, docs
+## Prompt 01 (backend, realm, infra): done
+See the report in the earlier session. `mvn verify` passes, stack runs.
 
-Verification: see the report at the end of the prompt (mvn verify, docker compose, curl output).
+## Prompt 02 (frontend and login theme)
+- [x] 1. Project setup (Vite, tokens alias, src/ui kit, styleguide, hex lint)
+- [x] 2. Auth (PKCE, in-memory tokens, typed API client, useMe, Can)
+- [x] 3. App shell and navigation, status pages
+- [ ] 4. Screens
+- [ ] 5. Keycloak login theme
+- [ ] 6. Tests (Vitest, Playwright)
+- [ ] 7. Visual check
+- [ ] 8. Docs
