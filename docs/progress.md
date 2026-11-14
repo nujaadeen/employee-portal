@@ -33,4 +33,4 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 6. Notifications: unreadCount, Unread only, Load more, Mark all as read
 - [x] 7. MFA states with text and icon
 - [x] 8. Activity order note
-- [ ] Tests, Playwright, screenshots, docs
+- [x] Tests (36 Vitest), Playwright (14), screenshots (06 board, 09 roles, 12 notifications), docs

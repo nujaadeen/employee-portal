@@ -39,7 +39,7 @@ export function RoleMatrixCard({ role, builtIn, description, onDeleted }: { role
     setSaved(false); setEdits({ role, set: next })
   }
   const groups = useMemo(() => buildMatrix(q.data?.permissions ?? []), [q.data])
-  const name = roleName(role)
+  const name = builtIn ? roleName(role) : role   // custom roles keep their exact name
   return (
     <Card as="section" aria-label={`${name} permissions`} title={name} subtitle={`${q.data?.people ?? '–'} people · Keycloak realm baracel${description ? ` · ${description}` : ''}`}
       action={<span className="row">

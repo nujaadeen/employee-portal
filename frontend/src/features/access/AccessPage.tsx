@@ -34,7 +34,7 @@ export function AccessPage() {
               {(roles.data ?? []).map((r) => (
                 <li key={r.name}>
                   <button type="button" className="role-btn" aria-current={r.name === role ? 'true' : undefined} onClick={() => setPicked(r.name)}>
-                    <span>{roleName(r.name)}{r.builtIn ? '' : <span className="pill pill--neutral role-custom">Custom</span>}</span><span className="muted">{r.people ?? '–'}</span>
+                    <span>{r.builtIn ? roleName(r.name) : r.name}{r.builtIn ? '' : <span className="pill pill--neutral role-custom">Custom</span>}</span><span className="muted">{r.people ?? '–'}</span>
                   </button>
                 </li>
               ))}

@@ -15,6 +15,46 @@ test.describe('Lena Fischer (HR) and Daniel Okoye (ADMIN)', () => {
     await context.close()
   })
 
+  test('Lena resets access after a confirmation that says an email will be sent', async ({ browser }) => {
+    const { context, page } = await asUser(browser, 'lena.fischer', '/employees')
+    await page.getByRole('button', { name: 'Show Karim Aziz' }).click()
+    await page.getByRole('button', { name: 'Reset access' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Reset access for Karim Aziz?' })
+    await expect(dialog).toContainText('An email will be sent to karim.aziz@baracel.example')
+    await dialog.getByRole('button', { name: 'Send email' }).click()
+    await expect(page.getByText('Reset email sent')).toBeVisible()
+    await expect(page.getByText('Managed by provider').first()).toBeVisible()
+    await context.close()
+  })
+
+  test('Daniel creates and deletes a custom role', async ({ browser }) => {
+    const name = 'TEST_' + Date.now().toString().slice(-6).replace(/\d/g, (d) => 'ABCDEFGHIJ'[Number(d)]!)
+    const { context, page } = await asUser(browser, 'daniel.okoye', '/access')
+    await page.getByRole('button', { name: 'New role' }).click()
+    const dialog = page.getByRole('dialog', { name: 'New role' })
+    await dialog.getByLabel('Name').fill('ab')
+    await dialog.getByRole('button', { name: 'Create role' }).click()
+    await expect(dialog.getByRole('alert')).toContainText('3 to 30 characters')   // the server's message, next to the field
+    await dialog.getByLabel('Name').fill('sales')
+    await dialog.getByRole('button', { name: 'Create role' }).click()
+    await expect(dialog.getByRole('alert')).toContainText('already exists')
+    await dialog.getByLabel('Name').fill(name)
+    await dialog.getByLabel('Description (optional)').fill('Created by the end-to-end test')
+    await dialog.getByRole('button', { name: 'Create role' }).click()
+    await expect(page.getByText(`Role ${name} created`)).toBeVisible()
+    await expect(page.getByRole('heading', { name })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled()
+    // built-in roles cannot be deleted: no button
+    await page.getByRole('button', { name: /^Sales/ }).click()
+    await expect(page.getByRole('button', { name: 'Delete role' })).toHaveCount(0)
+    await page.getByRole('button', { name: new RegExp(name) }).click()
+    await page.getByRole('button', { name: 'Delete role' }).click()
+    await page.getByRole('dialog', { name: `Delete the ${name} role?` }).getByRole('button', { name: 'Delete role' }).click()
+    await expect(page.getByText(`Role ${name} deleted`)).toBeVisible()
+    await expect(page.getByRole('button', { name: new RegExp(name) })).toHaveCount(0)
+    await context.close()
+  })
+
   test('Daniel (admin) edits the role matrix and sees sign-in methods', async ({ browser }) => {
     const { context, page } = await asUser(browser, 'daniel.okoye', '/access')
     await expect(page.getByRole('heading', { name: 'Roles and access' })).toBeVisible()

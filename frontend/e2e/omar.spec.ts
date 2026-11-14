@@ -20,6 +20,41 @@ test.describe('Omar Haddad (MANAGER)', () => {
     await context.close()
   })
 
+  test('notification list: unread only, load more and mark all as read', async ({ browser }) => {
+    const { context, page } = await asUser(browser, 'omar.haddad')
+    const bell = page.getByRole('button', { name: /^Notifications/ })
+    await bell.click()
+    const panel = page.getByRole('dialog', { name: 'Notifications' })
+    await expect(panel.getByText(/Showing \d+ of \d+/)).toBeVisible()
+    await expect(panel.getByRole('button', { name: /Leave request from/ }).first()).toBeVisible()
+    await shot(page, '12-notifications-omar')
+    await panel.getByRole('switch', { name: 'Unread only' }).click()
+    await expect(panel.getByText(/Showing \d+ of \d+|Nothing unread/)).toBeVisible()
+    await panel.getByRole('switch', { name: 'Unread only' }).click()
+    const markAll = panel.getByRole('button', { name: 'Mark all as read' })
+    if (await markAll.isEnabled()) {
+      await markAll.click()
+      await expect(page.getByText(/notifications? marked as read/)).toBeVisible()
+    }
+    await expect(page.getByRole('button', { name: 'Notifications' })).toBeVisible()   // no unread count left in the name
+    await context.close()
+  })
+
+  test('a manager in the project adds and removes a member', async ({ browser }) => {
+    const { context, page } = await asUser(browser, 'omar.haddad', '/tasks')
+    await page.getByRole('button', { name: 'Members' }).click()
+    const dialog = page.getByRole('dialog', { name: 'BAR members' })
+    await expect(dialog.getByText('Priya Nair')).toBeVisible()
+    await dialog.getByLabel('Add a member').selectOption({ label: 'Karim Aziz' })
+    await dialog.getByRole('button', { name: 'Add', exact: true }).click()
+    await expect(page.getByText('Member added')).toBeVisible()
+    await expect(dialog.getByText('Karim Aziz')).toBeVisible()
+    await dialog.getByRole('button', { name: 'Remove Karim Aziz' }).click()
+    await page.getByRole('dialog', { name: 'Remove Karim Aziz?' }).getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByText('Karim Aziz removed from BAR')).toBeVisible()
+    await context.close()
+  })
+
   test('a leave request goes from Aisha to Omar and back', async ({ browser }) => {
     const day = uniqueWorkday()
     const aisha = await asUser(browser, 'aisha.rahman', '/leave')

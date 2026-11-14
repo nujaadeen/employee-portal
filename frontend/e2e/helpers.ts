@@ -35,7 +35,7 @@ export async function shot(page: Page, name: string) {
 /** A working day far in the future that changes on every run, so repeated runs never overlap. */
 export function uniqueWorkday(): string {
   const base = new Date(2027, 0, 4)
-  base.setDate(base.getDate() + (Math.floor(Date.now() / 60000) % 500))
+  base.setDate(base.getDate() + (Math.floor(Date.now() / 1000) % 900))
   while (base.getDay() === 0 || base.getDay() === 6) base.setDate(base.getDate() + 1)
   const p = (n: number) => String(n).padStart(2, '0')
   return `${base.getFullYear()}-${p(base.getMonth() + 1)}-${p(base.getDate())}`

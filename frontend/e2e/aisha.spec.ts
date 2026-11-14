@@ -21,7 +21,7 @@ test.describe('Aisha Rahman (SALES)', () => {
     await nav.getByRole('link', { name: 'Leave' }).click()
     await expect(page.getByRole('heading', { name: 'Request leave' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Requests to approve' })).toHaveCount(0)
-    await expect(page.getByLabel('Annual balance')).toContainText('14')
+    await expect(page.getByLabel('Annual balance')).toContainText(/\d+ of 30 days/)
     await shot(page, '03-leave-aisha')
 
     // typing the URL directly shows the 403 page; the backend would refuse as well
@@ -35,11 +35,20 @@ test.describe('Aisha Rahman (SALES)', () => {
     const { context, page } = await asUser(browser, 'aisha.rahman', '/tasks')
     await expect(page.getByRole('heading', { name: /Sprint 23/ })).toBeVisible()
     await expect(page.getByText('BAR-142').first()).toBeVisible()
+    await expect(page.getByText('localhost:3000')).toBeVisible()   // host of giteaUrl from /api/config
     await shot(page, '06-tasks-board-aisha')
     await page.getByRole('link', { name: 'WhatsApp OTP delivery' }).first().click()
     await expect(page.getByRole('heading', { name: 'BAR-142' })).toBeVisible()
     await expect(page.getByText('Webhook live')).toBeVisible()
     await expect(page.getByText('2 of 4 done')).toBeVisible()
+    // Open in Gitea uses the public Gitea address from /api/config
+    await expect(page.getByRole('link', { name: 'Open in Gitea' })).toHaveAttribute('href', /^http:\/\/localhost:3000\/baracel\/otp-service(\/pulls\/\d+)?$/)
+    // the branch dialog offers the repositories linked to the project, not a free text box
+    await page.getByRole('button', { name: 'Create branch' }).click()
+    const repo = page.getByRole('dialog', { name: 'Create branch' }).getByLabel('Repository')
+    await expect(repo.getByRole('option', { name: 'baracel/otp-service' })).toBeAttached()
+    await expect(repo.getByRole('option', { name: 'baracel/portal' })).toBeAttached()
+    await page.keyboard.press('Escape')
     await shot(page, '07-task-detail-aisha')
 
     // keyboard: Alt + arrow on the card title moves it one column, then move it back (works from any column)
