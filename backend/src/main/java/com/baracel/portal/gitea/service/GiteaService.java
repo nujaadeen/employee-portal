@@ -148,26 +148,22 @@ public class GiteaService {
 
     // ---- helpers ----
 
-    /** The repository must belong to the task's project. A repo that Gitea knows is registered on first use. */
+    /** Only a repository linked to the task's project (project_repository) is accepted. */
     private GitRepository repository(Long projectId, String name) {
         List<GitRepository> mine = repositories.findByProjectId(projectId);
         if (name == null || name.isBlank()) {
             if (mine.size() == 1) return mine.get(0);
             throw ApiException.badRequest("repo-required", "Say which repository to use.");
         }
-        return mine.stream().filter(r -> r.fullName.equalsIgnoreCase(name)).findFirst().orElseGet(() -> {
-            try {
-                GiteaClient.RepoInfo info = client.repository(name);
-                GitRepository r = new GitRepository();
-                r.projectId = projectId;
-                r.fullName = info.fullName();
-                r.defaultBranch = info.defaultBranch();
-                r.htmlUrl = info.htmlUrl();
-                return repositories.save(r);
-            } catch (RestClientException e) {
-                throw ApiException.badRequest("unknown-repo", "Repository not found in Gitea: " + name);
-            }
-        });
+        return mine.stream().filter(r -> r.fullName.equalsIgnoreCase(name)).findFirst()
+                .orElseThrow(() -> ApiException.badRequest("repo-not-linked", "Repository " + name + " is not linked to this project."));
+    }
+
+    @Transactional(readOnly = true)
+    public List<RepoDto> projectRepositories(CurrentUser me, String projectKey) {
+        Long projectId = tasks.memberProjectId(me, projectKey);
+        return repositories.findByProjectId(projectId).stream().map(r -> new RepoDto(r.projectId, r.fullName, r.defaultBranch, r.htmlUrl))
+                .sorted(Comparator.comparing(RepoDto::fullName)).toList();
     }
 
     private TaskGitLink link(Long taskId, String repo, String branch) {

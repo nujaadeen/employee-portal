@@ -33,6 +33,10 @@ public class GiteaController {
         return service.linkPullRequest(me, key, body.repo(), body.prNumber());
     }
 
+    @GetMapping("/api/projects/{key}/repos")
+    @PreAuthorize("hasAuthority('task:view')")
+    public List<RepoDto> projectRepos(CurrentUser me, @PathVariable String key) { return service.projectRepositories(me, key); }
+
     @GetMapping("/api/repos")
     @PreAuthorize("hasAuthority('repo:view')")
     public List<RepoDto> repos(CurrentUser me, @RequestParam(defaultValue = "false") boolean refresh) {
