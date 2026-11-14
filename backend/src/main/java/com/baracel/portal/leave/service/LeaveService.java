@@ -49,6 +49,13 @@ public class LeaveService {
         this.clock = clock;
     }
 
+    public record LeaveTypeInfo(String code, String name, Integer defaultDays) {}
+
+    @Transactional(readOnly = true)
+    public List<LeaveTypeInfo> leaveTypes() {
+        return types.findAllByOrderBySortOrderAsc().stream().map(t -> new LeaveTypeInfo(t.code, t.name, t.defaultDays)).toList();
+    }
+
     // ---- balances ----
 
     @Transactional

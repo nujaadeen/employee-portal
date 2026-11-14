@@ -71,6 +71,7 @@ portal:
 
 gitea:
   base-url: ${GITEA_BASE_URL:http://localhost:3000}
+  public-url: ${GITEA_PUBLIC_URL:http://localhost:3000}   # what browsers open; may differ from base-url inside Docker
   token: ${GITEA_TOKEN:}
   webhook-secret: ${GITEA_WEBHOOK_SECRET:}
   move-to-review-on-pr-open: true

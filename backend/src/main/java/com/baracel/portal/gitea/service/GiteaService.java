@@ -47,6 +47,9 @@ public class GiteaService {
         this.props = props;
     }
 
+    /** The address people click in the browser (gitea.public-url). */
+    public String publicUrl() { return props.publicUrl(); }
+
     // ---- reads for the board, detail and dashboard ----
 
     /** One summary per task: the link with a pull request wins, otherwise the most recent branch. */
