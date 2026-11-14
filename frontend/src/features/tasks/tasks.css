@@ -23,3 +23,6 @@
 .timeline__day { padding: var(--space-3) 0; border-top: 1px solid var(--border-subtle); }
 .timeline__day:first-child { border-top: 0; }
 @media (max-width: 860px) { .board { grid-template-columns: repeat(4, 80vw); } }
+.members__row { padding: var(--space-2) 0; border-top: 1px solid var(--border-subtle); }
+.members__row:first-child { border-top: 0; }
+.members__add { align-items: flex-end; margin-top: var(--space-4); }

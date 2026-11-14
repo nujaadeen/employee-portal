@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Check, Filter, Plus, SquareCheck } from 'lucide-react'
+import { Check, Filter, Plus, SquareCheck, Users } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, unwrap } from '@/api/client'
@@ -19,6 +19,7 @@ import { StatusPill } from '@/ui/StatusPill'
 import { ErrorPage } from '@/pages/StatusPages'
 import { Board } from './Board'
 import { CreateTaskModal } from './CreateTaskModal'
+import { MembersModal } from './MembersModal'
 import { statusInfo } from './statuses'
 import './tasks.css'
 
@@ -57,7 +58,10 @@ function Timeline({ board }: { board: BoardData }) {
 }
 
 export function TasksPage() {
-  const { me } = usePermissions()
+  const { me, has } = usePermissions()
+  // HR and administrators manage any project, managers the projects they belong to. The server decides; this only hides the buttons.
+  const canManageMembers = has('employee:manage') || has('access:manage') || has('employee:team')
+  const [members, setMembers] = useState(false)
   const [view, setView] = useState<View>('board')
   const [mine, setMine] = useState(false)
   const [create, setCreate] = useState(false)
@@ -84,6 +88,7 @@ export function TasksPage() {
       <PageHeader title={title} subtitle={sub}
         actions={<>
           <IconButton label="Only my tasks" aria-pressed={mine} onClick={() => setMine(!mine)} className={mine ? 'icon-btn--on' : ''}><Filter size={20} /></IconButton>
+          <Button icon={<Users size={18} />} onClick={() => setMembers(true)}>Members</Button>
           <Can permission="task:create"><Button variant="primary" icon={<Plus size={18} />} onClick={() => setCreate(true)}>Create task</Button></Can>
         </>} />
       <div className="row tasks-bar">
@@ -99,6 +104,7 @@ export function TasksPage() {
       ) : (b?.taskCount ?? 0) === 0 ? (
         <Card as="div"><EmptyState icon={<SquareCheck size={24} />} title="No tasks in this sprint">Create a task to get started.</EmptyState></Card>
       ) : view === 'board' ? <Board board={b!} boardKey={boardKey} mine={mine} meId={me?.id} /> : view === 'list' ? <ListView board={b!} /> : <Timeline board={b!} />}
+      {key ? <MembersModal open={members} onClose={() => setMembers(false)} projectKey={key} canManage={canManageMembers} /> : null}
       {key ? <CreateTaskModal open={create} onClose={() => setCreate(false)} projectKey={key} /> : null}
     </>
   )

@@ -18,6 +18,7 @@ import { ApiError } from '@/api/client'
 import { App } from '@/App'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { initTheme } from '@/theme'
+import { ToastProvider } from '@/ui/Toast'
 
 initTheme()
 
@@ -35,9 +36,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ToastProvider>
       </QueryClientProvider>
     </AuthProvider>
   </StrictMode>,
