@@ -144,8 +144,8 @@ export function TaskDetailPage() {
           </Card>
         </div>
       </div>
-      <CreateBranchModal key={`b-${branch}`} open={branch} onClose={() => setBranch(false)} taskKey={key} defaultRepo={mainLink?.repo ?? ''} />
-      <LinkPrModal key={`l-${link}`} open={link} onClose={() => setLink(false)} taskKey={key} defaultRepo={mainLink?.repo ?? ''} />
+      <CreateBranchModal key={`b-${branch}`} open={branch} onClose={() => setBranch(false)} taskKey={key} projectKey={d.projectKey} defaultRepo={mainLink?.repo ?? ''} />
+      <LinkPrModal key={`l-${link}`} open={link} onClose={() => setLink(false)} taskKey={key} projectKey={d.projectKey} defaultRepo={mainLink?.repo ?? ''} />
     </>
   )
 }
