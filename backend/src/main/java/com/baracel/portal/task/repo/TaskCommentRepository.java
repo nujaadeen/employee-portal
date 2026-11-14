@@ -1,0 +1,9 @@
+package com.baracel.portal.task.repo;
+
+import com.baracel.portal.task.domain.TaskComment;
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TaskCommentRepository extends JpaRepository<TaskComment, Long> {
+    List<TaskComment> findByTaskIdOrderByCreatedAtAsc(Long taskId);
+}
