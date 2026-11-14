@@ -54,6 +54,9 @@ export function dueLabel(iso: string, todayIso: string): string {
   return weekdayDate(iso)
 }
 
+/** Role name for people: Sales, Manager, but HR stays HR. */
+export const roleName = (r?: string) => (!r ? '' : r === 'HR' ? 'HR' : r.charAt(0) + r.slice(1).toLowerCase())
+
 export function titleCase(s: string) { return s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ') }
 
 /** "Today, 14:20", "Yesterday, 09:05", otherwise "Tue 10 Nov" */

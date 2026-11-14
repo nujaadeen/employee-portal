@@ -3,7 +3,7 @@
 .tasks-bar .field .field__control { height: 44px; }
 .icon-btn--on { background: var(--primary-soft-bg); color: var(--primary-soft-text); border-color: var(--primary); }
 .board-hint { font-size: var(--text-xs); margin-bottom: var(--space-3); }
-.board { display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 20px; align-items: start; overflow-x: auto; padding-bottom: var(--space-3); }
+.board { position: relative; display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 20px; align-items: start; overflow-x: auto; padding-bottom: var(--space-3); }
 .board__col { background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-4); min-height: 160px; }
 .board__head { display: flex; justify-content: space-between; margin-bottom: var(--space-3); }
 .board__cards { display: flex; flex-direction: column; gap: var(--space-3); }

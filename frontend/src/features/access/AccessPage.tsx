@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { api, unwrap } from '@/api/client'
 import { env } from '@/env'
+import { roleName } from '@/lib/format'
 import { Card } from '@/ui/Card'
 import { PageHeader } from '@/ui/PageHeader'
 import { SkeletonRows } from '@/ui/Skeleton'
@@ -27,7 +28,7 @@ export function AccessPage() {
               {(roles.data ?? []).map((r) => (
                 <li key={r.name}>
                   <button type="button" className="role-btn" aria-current={r.name === role ? 'true' : undefined} onClick={() => setPicked(r.name!)}>
-                    <span>{r.name!.charAt(0) + r.name!.slice(1).toLowerCase()}</span><span className="muted">{r.people ?? '–'}</span>
+                    <span>{roleName(r.name)}</span><span className="muted">{r.people ?? '–'}</span>
                   </button>
                 </li>
               ))}

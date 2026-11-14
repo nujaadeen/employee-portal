@@ -37,5 +37,5 @@ const ROLE_ORDER = ['ADMIN', 'HR', 'MANAGER', 'SALES', 'ENGINEER', 'EMPLOYEE']
 /** The role shown in the sidebar footer: the most senior of the person's roles, in sentence case. */
 export function primaryRoleLabel(roles: readonly string[] | undefined): string {
   const r = ROLE_ORDER.find((x) => roles?.includes(x)) ?? 'EMPLOYEE'
-  return r.charAt(0) + r.slice(1).toLowerCase()
+  return r === 'HR' ? 'HR' : r.charAt(0) + r.slice(1).toLowerCase()
 }

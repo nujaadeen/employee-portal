@@ -1,4 +1,6 @@
-import { Check, Minus } from 'lucide-react'
+import { Check, LogOut, Minus } from 'lucide-react'
+import { logout } from '@/auth/oidc'
+import { Button } from '@/ui/Button'
 import { useMe } from '@/auth/me'
 import { PageHeader } from '@/ui/PageHeader'
 import { Card } from '@/ui/Card'
@@ -10,7 +12,8 @@ export function ProfilePage() {
   if (!me) return null
   return (
     <>
-      <PageHeader title="Your profile" subtitle="What Baracel knows about you. HR keeps the record up to date." />
+      <PageHeader title="Your profile" subtitle="What Baracel knows about you. HR keeps the record up to date."
+        actions={<Button icon={<LogOut size={18} />} onClick={() => { void logout() }}>Sign out</Button>} />
       <div className="grid">
         <Card title={me.name} subtitle={`${me.jobTitle ?? 'No job title yet'}${me.department ? ` · ${me.department}` : ''}`}>
           <SummaryList rows={[

@@ -7,7 +7,10 @@
 .matrix { min-width: 560px; }
 .matrix__col { text-align: center !important; }
 .matrix__group { padding-top: var(--space-5) !important; }
-.matrix__row { text-align: left; font-weight: var(--weight-regular); }
+.matrix .matrix__row { text-align: left; font-weight: var(--weight-regular); text-transform: none; letter-spacing: normal; color: var(--text-primary); font-size: var(--text-sm); }
+.matrix .matrix__row .muted { font-size: var(--text-xs); }
+.matrix .matrix__group { font-size: var(--text-xs); }
+.matrix__box--inherited { cursor: default; opacity: 0.8; }
 .matrix__row strong { font-weight: var(--weight-semibold); font-size: 15px; }
 .matrix__cell { text-align: center; }
 .matrix__box { width: 44px; height: 44px; background: none; border: 0; border-radius: var(--radius-md); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }

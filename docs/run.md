@@ -19,7 +19,7 @@ docker compose ps           # all four should be "healthy"
 The realm is imported from `keycloak/realm/baracel-realm.json` on the first start. The import skips an existing realm, so after editing the file reset Keycloak's database:
 `docker compose stop keycloak && docker compose exec postgres psql -U postgres -c 'DROP DATABASE keycloak' -c 'CREATE DATABASE keycloak' && docker compose up -d keycloak`.
 
-**Login theme.** The realm sets `loginTheme: baracel`. `keycloak/themes/baracel/login/` is empty until the frontend prompt adds the theme. Until then Keycloak logs a warning and shows its default login page, so everything still works.
+**Login theme.** The realm sets `loginTheme: baracel`, and the theme lives in `keycloak/themes/baracel/login/`. (Correction to the earlier note: a missing or empty theme folder does not fall back, Keycloak answers 500 on the login page. The theme must be there.)
 
 ## 2. Run the backend
 ```bash
@@ -84,3 +84,16 @@ Restart the backend with `GITEA_TOKEN` and `GITEA_WEBHOOK_SECRET` set. Put a tas
 - Keycloak Admin calls answer 401: the `portal-service` client needs the `kc-admin-api` scope (it is in the realm file) and `PORTAL_SERVICE_CLIENT_SECRET` must match the realm.
 - `GET /api/me` shows `signInMethods: []`: Keycloak was not reachable or the client secret is wrong. The rest of the API keeps working.
 - Port 5432 busy: the compose Postgres uses 5433.
+
+## Frontend (prompt 02)
+```bash
+# 1. infrastructure and backend as above (backend with SPRING_PROFILES_ACTIVE=local)
+# 2. frontend
+cd frontend && npm ci && npm run dev          # http://localhost:5173
+```
+Sign in as any dev user above. The Keycloak login page is the Baracel theme.
+
+**Rebuild the login theme.** Edit files in `keycloak/themes/baracel/login/`. `scripts/sync-theme.sh` copies `design/tokens.css`, the logos and the fonts into `resources/` (run it after changing tokens or logos; it needs `npm ci` in `frontend/` for the fonts). Keycloak in `start-dev` does not cache themes, so a browser refresh shows the change. For a cached setup restart Keycloak: `docker compose restart keycloak`.
+
+**Checks.** `cd frontend && npm run build && npm run lint && npm test`. End-to-end: start the stack and the backend on a freshly seeded database, then `npm run e2e`. The leave test books a different future day on every run (and uses up one annual day of Aisha), so reset the portal database now and then:
+`docker compose exec postgres psql -U postgres -c 'DROP DATABASE portal' -c 'CREATE DATABASE portal'` and restart the backend.

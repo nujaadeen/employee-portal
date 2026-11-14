@@ -9,6 +9,6 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 3. App shell and navigation, status pages
 - [x] 4. Screens
 - [x] 5. Keycloak login theme
-- [ ] 6. Tests (Vitest, Playwright)
-- [ ] 7. Visual check
-- [ ] 8. Docs
+- [x] 6. Tests (Vitest, Playwright)
+- [x] 7. Visual check
+- [x] 8. Docs

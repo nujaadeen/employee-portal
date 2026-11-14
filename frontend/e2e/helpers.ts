@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Browser, Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 
 export const PASSWORD = 'ChangeMe123!'
@@ -14,6 +14,29 @@ export async function signIn(page: Page, username: string, path = '/') {
   await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible()
 }
 
-export async function signOut(page: Page) {
-  await page.context().clearCookies()
+/** A fresh browser context (own cookies) signed in as the given person. */
+export async function asUser(browser: Browser, username: string, path = '/') {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const page = await context.newPage()
+  await signIn(page, username, path)
+  return { context, page }
+}
+
+export async function shot(page: Page, name: string) {
+  await page.waitForLoadState('networkidle')
+  // Grow the viewport to the page height so the sticky sidebar spans the whole screenshot, like the design PNGs.
+  const size = page.viewportSize() ?? { width: 1440, height: 900 }
+  const height = await page.evaluate(() => Math.max(document.documentElement.scrollHeight, window.innerHeight))
+  await page.setViewportSize({ width: size.width, height })
+  await page.screenshot({ path: `e2e/screenshots/${name}.png` })
+  await page.setViewportSize(size)
+}
+
+/** A working day far in the future that changes on every run, so repeated runs never overlap. */
+export function uniqueWorkday(): string {
+  const base = new Date(2027, 0, 4)
+  base.setDate(base.getDate() + (Math.floor(Date.now() / 60000) % 500))
+  while (base.getDay() === 0 || base.getDay() === 6) base.setDate(base.getDate() + 1)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${base.getFullYear()}-${p(base.getMonth() + 1)}-${p(base.getDate())}`
 }

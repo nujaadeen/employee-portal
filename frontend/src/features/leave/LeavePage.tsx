@@ -22,8 +22,8 @@ export function LeavePage() {
         <RequestForm todayIso={today} />
       </div>
       <div className="stack" style={{ gap: 20 }}>
-        <MyRequests />
         <Can permission="leave:approve"><Approvals /></Can>
+        <MyRequests />
       </div>
     </>
   )

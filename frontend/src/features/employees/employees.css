@@ -2,9 +2,11 @@
 .emp-stats > * { flex: 1 1 200px; }
 .emp-main { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
 .emp-list { flex: 2 1 560px; }
-.emp-panel { flex: 1 1 340px; max-width: 420px; }
+.emp-panel { flex: 1 1 340px; max-width: 380px; }
 .emp-toolbar { flex-wrap: wrap; }
-.emp-toolbar .search { min-width: 220px; flex: 1 1 220px; }
+.emp-toolbar .search { min-width: 260px; flex: 1 1 260px; }
+.emp-list .table td, .emp-list .table th { padding-left: var(--space-2); padding-right: var(--space-2); }
+.emp-list .table td:last-child { white-space: nowrap; }
 .emp-chips { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
 .emp-chips .tab[data-on="true"] { background: var(--primary); border-color: var(--primary); color: var(--text-on-primary); }
 .emp-waiting { margin-bottom: 20px; }

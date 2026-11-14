@@ -66,7 +66,7 @@ export function RequestForm({ todayIso }: { todayIso: string }) {
       <form className="stack" onSubmit={onSubmit} noValidate>
         <Select label="Leave type" value={type} onChange={(e) => { setType(e.target.value); setDone(false) }} options={LEAVE_TYPES} error={errors.type} />
         <div className="row" style={{ alignItems: 'flex-start' }}>
-          <Field className="grow" label="From" type="date" value={from} onChange={(e) => { setFrom(e.target.value); setDone(false) }} error={errors.from} />
+          <Field className="grow" label="From" type="date" value={from} onChange={(e) => { const v = e.target.value; setFrom(v); if (!to || to < v) setTo(v); setDone(false) }} error={errors.from} />
           <Field className="grow" label="To" type="date" value={to} min={from} onChange={(e) => { setTo(e.target.value); setDone(false) }} error={errors.to ?? (from && to && to < from ? 'The end date is before the start date.' : null)} />
         </div>
         <Field label="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} />

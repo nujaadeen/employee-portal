@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Minus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { api, ApiError, unwrap } from '@/api/client'
+import { roleName } from '@/lib/format'
 import { Button } from '@/ui/Button'
 import { Card } from '@/ui/Card'
 import { SkeletonRows } from '@/ui/Skeleton'
@@ -10,6 +11,9 @@ import { buildMatrix, COLUMNS } from './Matrix'
 export function RoleMatrixCard({ role }: { role: string }) {
   const qc = useQueryClient()
   const q = useQuery({ queryKey: ['access', 'matrix', role], queryFn: () => unwrap(api.GET('/api/access/roles/{role}/matrix', { params: { path: { role } } })) })
+  // Everyone also holds EMPLOYEE, so its permissions show as inherited (ticked, not editable here).
+  const base = useQuery({ queryKey: ['access', 'matrix', 'EMPLOYEE'], enabled: role !== 'EMPLOYEE', queryFn: () => unwrap(api.GET('/api/access/roles/{role}/matrix', { params: { path: { role: 'EMPLOYEE' } } })) })
+  const inherited = useMemo(() => new Set(role === 'EMPLOYEE' ? [] : (base.data?.permissions ?? []).filter((p) => p.granted).map((p) => p.key!)), [base.data, role])
   const server = useMemo(() => new Set((q.data?.permissions ?? []).filter((p) => p.granted).map((p) => p.key!)), [q.data])
   const [edits, setEdits] = useState<{ role: string; set: Set<string> } | null>(null)
   const granted = edits && edits.role === role ? edits.set : server
@@ -25,7 +29,7 @@ export function RoleMatrixCard({ role }: { role: string }) {
     setSaved(false); setEdits({ role, set: next })
   }
   const groups = useMemo(() => buildMatrix(q.data?.permissions ?? []), [q.data])
-  const name = role.charAt(0) + role.slice(1).toLowerCase()
+  const name = roleName(role)
   return (
     <Card as="section" aria-label={`${name} permissions`} title={name} subtitle={`${q.data?.people ?? '–'} people · Keycloak realm baracel`}
       action={<Button variant="primary" icon={<Check size={18} />} loading={save.isPending} disabled={!dirty} onClick={() => save.mutate()}>Save changes</Button>}>
@@ -43,6 +47,8 @@ export function RoleMatrixCard({ role }: { role: string }) {
                       const cell = r.cells[c]
                       if (!cell) return <td key={c} className="matrix__cell"><Minus size={16} aria-label="Not available" className="muted" /></td>
                       const on = granted.has(cell.key)
+                      if (!on && inherited.has(cell.key))
+                        return <td key={c} className="matrix__cell"><span className="matrix__box matrix__box--inherited" role="img" aria-label={`${r.label}: ${c.toLowerCase()}, from the Employee role`} title="From the Employee role"><Check size={18} style={{ color: 'var(--success)' }} /></span></td>
                       return (
                         <td key={c} className="matrix__cell">
                           <button type="button" role="checkbox" aria-checked={on} aria-label={`${r.label}: ${c.toLowerCase()}`} className="matrix__box" onClick={() => toggle(cell.key)}>

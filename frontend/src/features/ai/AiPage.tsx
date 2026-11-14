@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, ApiError, unwrap } from '@/api/client'
 import type { components } from '@/api/schema'
+import { roleName } from '@/lib/format'
 import { Button } from '@/ui/Button'
 import { IconButton } from '@/ui/IconButton'
 import { EmptyState } from '@/ui/EmptyState'
@@ -100,7 +101,7 @@ export function AiPage() {
 
       <aside className="ai__side" aria-label="What you can access">
         <div className="label-caps">Your role</div>
-        <div className="row" style={{ margin: 'var(--space-3) 0 var(--space-5)', flexWrap: 'wrap' }}>{myRoles.length ? myRoles.map((r) => <StatusPill key={r} tone="info">{r.charAt(0) + r.slice(1).toLowerCase()}</StatusPill>) : <StatusPill tone="info">Employee</StatusPill>}</div>
+        <div className="row" style={{ margin: 'var(--space-3) 0 var(--space-5)', flexWrap: 'wrap' }}>{myRoles.length ? myRoles.map((r) => <StatusPill key={r} tone="info">{roleName(r)}</StatusPill>) : <StatusPill tone="info">Employee</StatusPill>}</div>
         <div className="label-caps">Knowledge you can search</div>
         {access.isPending ? <SkeletonRows rows={5} label="Loading access" /> : access.isError ? <p className="note note--danger" role="alert">Could not load your access.</p> : (
           <ul className="plain-list">

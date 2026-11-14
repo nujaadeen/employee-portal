@@ -22,7 +22,7 @@ export const LEAVE_TONE: Record<string, { label: string; tone: Tone }> = {
 
 export function Approvals() {
   const qc = useQueryClient()
-  const all = usePermission('employee:records')
+  const everyone = usePermission('employee:records')
   const [target, setTarget] = useState<{ req: LeaveRequest; action: 'approve' | 'reject' } | null>(null)
   const [note, setNote] = useState('')
   const q = useQuery({ queryKey: ['leave', 'approvals'], queryFn: () => unwrap(api.GET('/api/leave/requests', { params: { query: { scope: 'approvals', status: 'ALL' } } })) })
@@ -34,9 +34,14 @@ export function Approvals() {
     onSuccess: () => { setTarget(null); setNote(''); void qc.invalidateQueries({ queryKey: ['leave'] }); void qc.invalidateQueries({ queryKey: ['dashboard'] }); void qc.invalidateQueries({ queryKey: ['me'] }) },
   })
   const close = () => { setTarget(null); setNote(''); decide.reset() }
-  const rows = q.data ?? []
+  // Pending first (soonest first), then the five most recent decisions, like the screen.
+  const all = q.data ?? []
+  const rows = [
+    ...all.filter((r) => r.status === 'PENDING').sort((a, b) => a.from!.localeCompare(b.from!)),
+    ...all.filter((r) => r.status !== 'PENDING').sort((a, b) => b.from!.localeCompare(a.from!)).slice(0, 5),
+  ]
   return (
-    <Card title="Requests to approve" id="approvals" action={<StatusPill tone="info"><Users size={14} aria-hidden="true" /> {all ? 'Everyone' : 'Your direct reports'}</StatusPill>}>
+    <Card title="Requests to approve" id="approvals" action={<StatusPill tone="info"><Users size={14} aria-hidden="true" /> {everyone ? 'Everyone' : 'Your direct reports'}</StatusPill>}>
       {q.isPending ? <SkeletonRows rows={3} label="Loading requests" /> : q.isError ? (
         <p className="note note--danger" role="alert">Could not load requests. {q.error.message} <Button variant="ghost" onClick={() => { void q.refetch() }}>Try again</Button></p>
       ) : rows.length === 0 ? <EmptyState icon={<Users size={24} />} title="Nothing to approve">Requests from your team will show up here.</EmptyState> : (

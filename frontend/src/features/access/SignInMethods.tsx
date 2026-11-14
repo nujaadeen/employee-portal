@@ -8,6 +8,7 @@ import { Toggle } from '@/ui/Toggle'
 import { FacebookIcon, GithubIcon, GoogleIcon } from '@/ui/BrandIcons'
 
 const ICON: Record<string, React.ReactNode> = { google: <GoogleIcon />, github: <GithubIcon />, facebook: <FacebookIcon />, password: <Mail size={20} /> }
+const ORDER = ['google', 'github', 'facebook', 'password']
 const NOTE: Record<string, string> = {
   google: 'Sign in with a Google account', github: 'Sign in with a GitHub account', facebook: 'Sign in with a Facebook account',
   password: 'Managed in Keycloak (password reset, verification)',
@@ -26,7 +27,7 @@ export function SignInMethods() {
     <Card as="section" aria-label="Sign-in methods" title="Sign-in methods" subtitle="Identity providers in Keycloak" className="signin-card">
       {q.isPending ? <SkeletonRows rows={4} label="Loading sign-in methods" /> : q.isError ? <p className="note note--danger" role="alert">Could not load sign-in methods. {q.error.message}</p> : (
         <ul className="plain-list">
-          {(q.data ?? []).map((p) => (
+          {[...(q.data ?? [])].sort((a, b) => ORDER.indexOf(a.alias ?? '') - ORDER.indexOf(b.alias ?? '')).map((p) => (
             <li key={p.alias} className="row idp">
               <span className="signin__icon" aria-hidden="true">{ICON[p.alias ?? '']}</span>
               <div className="grow"><strong>{p.displayName}</strong><div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{NOTE[p.alias ?? ''] ?? ''}</div></div>
@@ -38,7 +39,7 @@ export function SignInMethods() {
       {m.error ? <div className="banner banner--danger" role="alert" style={{ marginTop: 'var(--space-3)' }}>{m.error instanceof ApiError ? m.error.message : 'Could not change the provider.'}</div> : null}
       <div style={{ marginTop: 'var(--space-4)' }}>
         <SummaryList label="Sign-up settings" rows={[
-          { label: 'New sign-ups get role', value: s?.defaultRoleForNewSignUps ?? '–' },
+          { label: 'New sign-ups get role', value: s?.defaultRoleForNewSignUps ? s.defaultRoleForNewSignUps.charAt(0) + s.defaultRoleForNewSignUps.slice(1).toLowerCase() : '–' },
           { label: 'Approved by', value: s?.approver ?? '–' },
           { label: 'Session length', value: s ? `${s.sessionLengthHours} hours` : '–' },
         ]} />

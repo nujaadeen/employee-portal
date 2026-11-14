@@ -22,4 +22,4 @@
 .cal-week__items { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .my-req { padding: var(--space-3) 0; border-top: 1px solid var(--border-subtle); flex-wrap: wrap; }
 .my-req:first-child { border-top: 0; }
-@media (max-width: 600px) { .cal__cell { min-height: 56px; padding: 4px; } .cal-chip { font-size: 10px; } }
+@media (max-width: 600px) { .cal__row { grid-template-columns: repeat(7, minmax(34px, 1fr)); gap: 4px; } .cal__cell { min-height: 56px; padding: 2px; } .cal-chip { font-size: 10px; padding: 0 3px; } }

@@ -51,3 +51,26 @@ Choices made where the brief was open or ambiguous. The simplest option that fit
 - Flyway only loads `db/seed` when the `local` profile (or tests) is active. Production migrations are in `db/migration`.
 - Screens are not consistent with each other (Sara is "Onboarding" on one and has comp-off on another; the dashboard's tasks differ from the board's). The board and the employee list were followed. Aisha has five extra open tasks outside Sprint 23 so her "7 open tasks" holds.
 - The employee code sequence restarts at 200 in the seed so new sign-ups do not clash with `EMP-0142` and `EMP-0157`.
+
+## Frontend and login theme (prompt 02)
+- Tokens: `design/tokens.css` is imported via the Vite alias `@design`; the Keycloak theme gets a copy through `scripts/sync-theme.sh`. Fonts are self-hosted (@fontsource) so no Google request is made.
+- Tokens live in memory. After a full page reload the browser is sent through Keycloak again (instant with the SSO cookie). Only the short login `state` uses sessionStorage.
+- The real logo (wordmark PNG) replaces the stand-in mark of the screens. In the light theme the navy-background PNG is used because the white text would vanish.
+- Employees default tab: HR (employee:records) lands on All employees, a manager on My team, everyone else on Directory.
+- The matrix shows permissions inherited from EMPLOYEE as ticked and not editable, because every person also holds EMPLOYEE; only the role's own permissions are saved.
+- Sign-in method hints on the Roles screen are neutral ("Sign in with a Google account"). The screen's "Work domain only", "Needs HR approval" and "MFA required" are not configured in the realm, so they are not shown as facts.
+- Keyboard moves on the board: Alt + Left/Right on a card's title. Mouse: drag and drop.
+- Notifications open as a popover from the bell and mark one item read per click.
+
+### Visual check (1440px screenshots in frontend/e2e/screenshots against design/screens)
+Fixed after comparing: sidebar logo and group spacing; person names in tables showed grey; calendar cells outside the month were invisible; Parental bar was red (red means failure); AI page showed realm-internal roles and a bell the screen does not have; AI role chips; HR written "Hr"; login social buttons were alphabetical and "Keep me signed in" unchecked; matrix row labels were upper case and Sales showed none of the inherited EMPLOYEE permissions; sign-in methods order; Requests to approve now lists pending first and only the five latest decisions; Employees side panel width and toolbar wrapping; mobile sideways scroll caused by visually hidden text.
+Left as is, with reasons:
+- Date fields use the browser's native date picker (format follows the browser locale, "11/14/2026"), not "19 Nov 2026". Native pickers are accessible and keyboard friendly.
+- Dummy data differs (13 people not 48, today's real date, different task assignees, "Overdue" instead of "Due today"). The code does what the data says.
+- Team table order is the server's (by first name), screen 05 lists Karim before Hana.
+- Login tabs are 44px high (touch target rule), the PNG shows 40px. The login email and password fields are empty, the PNG shows demo values.
+- Screen 04 shows "Reset access", screen 09 "New role", the board "gitea.baracel.internal": no backend endpoint (see docs/backend-gaps.md). The Gitea chip shows the host of VITE_GITEA_URL.
+- Matrix has extra rows the screen does not have (HR records, one row per knowledge collection, Roles and access) because each is a real permission.
+- Task detail "Activity" is newest first (server order); the screen mixes order.
+- AI header chip says "Simulated assistant · Phase 1" instead of "Ollama · local model".
+- "Schedule" is disabled with a Phase 2 hint.

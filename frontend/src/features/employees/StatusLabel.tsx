@@ -14,4 +14,4 @@ export function EmployeeStatus({ status }: { status?: string }) {
   return <StatusPill tone={m.tone}>{m.label}</StatusPill>
 }
 
-export const roleLabel = (r?: string) => (r ? r.charAt(0) + r.slice(1).toLowerCase() : '')
+export { roleName as roleLabel } from '@/lib/format'
