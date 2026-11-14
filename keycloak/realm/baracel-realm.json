@@ -152,7 +152,8 @@
         "profile",
         "roles",
         "basic",
-        "email"
+        "email",
+        "kc-admin-api"
       ]
     },
     {

@@ -46,6 +46,7 @@ services:
       KC_HTTP_PORT: "8180"
       KC_HOSTNAME: http://localhost:8180
       KC_HEALTH_ENABLED: "true"
+      KC_LOG_LEVEL: ${KC_LOG_LEVEL:-info}
       # Placeholders used inside keycloak/realm/baracel-realm.json
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-change-me}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-change-me}
