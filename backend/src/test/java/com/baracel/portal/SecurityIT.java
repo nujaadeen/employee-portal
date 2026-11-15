@@ -48,7 +48,7 @@ class SecurityIT extends IntegrationTest {
     void permissionsAreTheUnionOfAllRoles() throws Exception {
         // Daniel is ADMIN + ENGINEER + MANAGER
         mvc.perform(getAs("daniel.okoye", "/api/me"))
-                .andExpect(jsonPath("$.permissions", hasItems("access:manage", "repo:view", "leave:approve", "employee:team", "ai:knowledge:hr")));
+                .andExpect(jsonPath("$.permissions", hasItems("access:manage", "repo:view", "leave:approve", "employee:team", "ai:knowledge:hr-policies")));
         mvc.perform(getAs("omar.haddad", "/api/me"))
                 .andExpect(jsonPath("$.permissions", hasItems("leave:approve", "employee:team")))
                 .andExpect(jsonPath("$.permissions", not(hasItem("employee:records"))));

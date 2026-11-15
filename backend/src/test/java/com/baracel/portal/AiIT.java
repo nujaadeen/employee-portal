@@ -86,7 +86,7 @@ class AiIT extends IntegrationTest {
                 .andExpect(jsonPath("$.collections[?(@.code=='product')].allowed").value(true))
                 .andExpect(jsonPath("$.collections[?(@.code=='brand')].allowed").value(true))
                 .andExpect(jsonPath("$.collections[?(@.code=='campaign')].allowed").value(true))
-                .andExpect(jsonPath("$.collections[?(@.code=='hr')].allowed").value(false))
+                .andExpect(jsonPath("$.collections[?(@.code=='hr-policies')].allowed").value(false))
                 .andExpect(jsonPath("$.collections[?(@.code=='engineering')].allowed").value(false))
                 .andExpect(jsonPath("$.collections[?(@.code=='product')].docCount").value(214))
                 .andExpect(jsonPath("$.companyChannels").value(3))

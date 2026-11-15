@@ -2,6 +2,10 @@ server:
   port: 8080
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: ${AI_MAX_UPLOAD_MB:25}MB
+      max-request-size: ${AI_MAX_UPLOAD_MB:25}MB
   application:
     name: baracel-portal
   datasource:
@@ -67,7 +71,22 @@ portal:
     weekend-days: SATURDAY,SUNDAY
     status-job-cron: "0 5 0 * * *"
   ai:
-    mode: stub
+    mode: ${AI_MODE:stub}          # stub (Phase 1, no AI service) or http (the FastAPI service)
+    service:
+      url: ${AI_SERVICE_URL:http://localhost:8000}
+      token-uri: ${AI_TOKEN_URI:http://localhost:8180/realms/baracel/protocol/openid-connect/token}
+      client-id: portal-backend-ai
+      client-secret: ${PORTAL_BACKEND_AI_CLIENT_SECRET:}
+      connect-timeout: 3s
+      chat-timeout: 90s
+      stream-idle-timeout: 30s
+      admin-timeout: 15s
+      max-upload-mb: ${AI_MAX_UPLOAD_MB:25}
+    breaker:
+      failure-threshold: 5
+      open-for: 30s
+    rate-limit:
+      chat-per-minute: 20
 
 gitea:
   base-url: ${GITEA_BASE_URL:http://localhost:3000}

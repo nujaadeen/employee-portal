@@ -12,4 +12,6 @@ public class AiMessage {
     public String role;
     public String content;
     @Column(name = "created_at") public Instant createdAt = Instant.now();
+    /** COMPLETE, STOPPED (client left mid-stream) or FAILED. */
+    public String status = "COMPLETE";
 }

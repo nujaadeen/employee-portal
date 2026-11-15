@@ -19,7 +19,7 @@ public class StubAiAssistant implements AiAssistantPort {
             "brand", "Brand voice guide",
             "campaign", "Campaign archive: QR launch",
             "engineering", "Engineering handbook",
-            "hr", "Leave policy 2026");
+            "hr-policies", "Leave policy 2026");
 
     @Override
     public AiReply chat(AiRequest req) {

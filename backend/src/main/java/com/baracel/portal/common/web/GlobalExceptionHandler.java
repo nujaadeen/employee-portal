@@ -22,7 +22,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ProblemDetail> api(ApiException e) {
-        return ResponseEntity.status(e.status()).body(ProblemDetails.of(e.status(), e.type(), e.getMessage()));
+        ResponseEntity.BodyBuilder b = ResponseEntity.status(e.status());
+        if (e.retryAfterSeconds() != null) b.header("Retry-After", String.valueOf(e.retryAfterSeconds()));
+        return b.body(ProblemDetails.of(e.status(), e.type(), e.getMessage()));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

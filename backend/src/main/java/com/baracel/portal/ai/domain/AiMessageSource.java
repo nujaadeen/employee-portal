@@ -11,4 +11,6 @@ public class AiMessageSource {
     @Column(name = "message_id") public UUID messageId;
     public String title;
     public String collection;
+    public Integer page;
+    @Column(name = "source_ref") public String sourceRef;
 }

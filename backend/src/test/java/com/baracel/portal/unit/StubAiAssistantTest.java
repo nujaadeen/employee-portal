@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 class StubAiAssistantTest {
     private final StubAiAssistant stub = new StubAiAssistant();
-    private static final List<String> ALL = List.of("product", "brand", "campaign", "hr", "engineering");
+    private static final List<String> ALL = List.of("product", "brand", "campaign", "hr-policies", "engineering");
 
     private AiReply ask(String message, List<String> allowed) {
         return stub.chat(new AiRequest(UUID.randomUUID(), message, List.of(), new AiUser(UUID.randomUUID(), "T", List.of("X")), allowed));
@@ -52,7 +52,7 @@ class StubAiAssistantTest {
 
     @Test
     void draftNeedsProductOrBrandKnowledge() {
-        assertNull(ask("write an ad", List.of("engineering", "hr")).draft());
+        assertNull(ask("write an ad", List.of("engineering", "hr-policies")).draft());
         AiReply onlyBrand = ask("write an ad", List.of("brand"));
         assertNotNull(onlyBrand.draft());
         assertEquals(List.of("brand"), onlyBrand.sources().stream().map(AiSource::collection).toList());

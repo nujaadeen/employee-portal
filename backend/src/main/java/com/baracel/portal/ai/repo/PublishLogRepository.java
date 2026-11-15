@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PublishLogRepository extends JpaRepository<PublishLog, Long> {
     List<PublishLog> findByDraftId(UUID draftId);
+    java.util.Optional<PublishLog> findByDraftIdAndChannelCode(UUID draftId, String channelCode);
+    org.springframework.data.domain.Page<PublishLog> findByUserIdOrderByCreatedAtDesc(UUID userId, org.springframework.data.domain.Pageable page);
 }

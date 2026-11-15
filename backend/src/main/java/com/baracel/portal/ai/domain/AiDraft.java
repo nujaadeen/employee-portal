@@ -15,4 +15,6 @@ public class AiDraft {
     public String hashtags = "";
     /** Comma separated channel codes. */
     @Column(name = "suggested_channels") public String suggestedChannels = "";
+    public String platform = "LINKEDIN";
+    public String language = "en";
 }
