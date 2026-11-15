@@ -1,0 +1,7 @@
+# For running the AI service from source on your machine (uv run uvicorn ...) instead of in Docker:
+#   docker compose -f docker-compose.yml -f docker-compose.host-ai.yml up -d postgres chroma keycloak
+# Publishes Chroma on 127.0.0.1:8001 only. Do not use this file on a shared host.
+services:
+  chroma:
+    ports:
+      - "127.0.0.1:8001:8000"

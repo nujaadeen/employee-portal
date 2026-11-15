@@ -225,7 +225,7 @@
     {
       "clientId": "portal-backend-ai",
       "name": "Baracel portal backend (AI service calls)",
-      "description": "Used by the Spring backend to call the AI service with client credentials. Tokens carry audience ai-service.",
+      "description": "Used by the Spring backend to call the AI service with client credentials. Ask for the scope you need (ai:invoke for chat, ai:ingest for knowledge management). Tokens carry audience ai-service.",
       "enabled": true,
       "publicClient": false,
       "protocol": "openid-connect",
@@ -236,11 +236,12 @@
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": true,
       "defaultClientScopes": [
-        "basic",
+        "basic"
+      ],
+      "optionalClientScopes": [
         "ai:invoke",
         "ai:ingest"
       ],
-      "optionalClientScopes": [],
       "protocolMappers": [
         {
           "name": "audience ai-service",

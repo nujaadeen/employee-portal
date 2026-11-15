@@ -44,7 +44,7 @@ class Settings(BaseSettings):
 
     # Retrieval
     retrieval_top_k: int = 8
-    retrieval_min_score: float = 0.30  # cosine similarity (1 - distance)
+    retrieval_min_score: float = 0.45  # cosine similarity (1 - distance); bge-m3: related text scores 0.5+, unrelated about 0.35
     retrieval_max_context_chars: int = 9000
     chat_history_turns: int = 6
 
