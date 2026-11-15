@@ -1,4 +1,4 @@
-import { Calendar, LayoutDashboard, Shield, Sparkles, SquareCheck, Users } from 'lucide-react'
+import { BookOpen, Calendar, Globe, LayoutDashboard, Shield, Sparkles, SquareCheck, Users } from 'lucide-react'
 import type { NavGroup } from '@/ui/SidebarNav'
 
 const I = 20
@@ -18,7 +18,14 @@ export function buildNav(has: (permission: string) => boolean): NavGroup[] {
       ],
     },
     { label: 'Work', items: has('task:view') ? [{ to: '/tasks', label: 'Tasks', icon: <SquareCheck size={I} /> }] : [] },
-    { label: 'Assistant', items: has('ai:chat') ? [{ to: '/ai', label: 'AI assistant', icon: <Sparkles size={I} /> }] : [] },
+    {
+      label: 'Assistant',
+      items: [
+        ...(has('ai:chat') ? [{ to: '/ai', label: 'AI assistant', icon: <Sparkles size={I} /> }] : []),
+        ...(has('ai:knowledge:manage') ? [{ to: '/knowledge', label: 'Knowledge base', icon: <BookOpen size={I} /> }] : []),
+        ...(has('social:publish:company') || has('social:publish:personal') ? [{ to: '/accounts', label: 'Connected accounts', icon: <Globe size={I} /> }] : []),
+      ],
+    },
     { label: 'Admin', items: has('access:manage') ? [{ to: '/access', label: 'Roles and access', icon: <Shield size={I} /> }] : [] },
   ]
 }

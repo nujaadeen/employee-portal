@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/knowledge/collections/{code}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["roles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/access/roles/{role}/matrix": {
         parameters: {
             query?: never;
@@ -116,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/social/linkedin/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["connect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{key}/members": {
         parameters: {
             query?: never;
@@ -212,6 +244,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/knowledge/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["collections"];
+        put?: never;
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/collections/{code}/sources/web": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["web"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/collections/{code}/sources/drive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["drive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/collections/{code}/reindex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reindex"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/collections/{code}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["documents"];
+        put?: never;
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/integrations/gitea/webhook": {
         parameters: {
             query?: never;
@@ -292,6 +404,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ai/messages/{id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["feedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/drafts/{id}/publish": {
         parameters: {
             query?: never;
@@ -317,7 +445,7 @@ export interface paths {
         };
         get: operations["list_1"];
         put?: never;
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -347,7 +475,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["roles"];
+        get: operations["roles_1"];
         put?: never;
         post: operations["createRole"];
         delete?: never;
@@ -418,6 +546,70 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["update_1"];
+        trace?: never;
+    };
+    "/api/ai/drafts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["editDraft"];
+        trace?: never;
+    };
+    "/api/social/linkedin/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/social/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/social/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["connections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/repos": {
@@ -564,6 +756,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/knowledge/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["job"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["activity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/employees": {
         parameters: {
             query?: never;
@@ -660,6 +884,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/social/connections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["disconnect"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{key}/members/{employeeId}": {
         parameters: {
             query?: never;
@@ -692,6 +932,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/knowledge/collections/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/knowledge/collections/{code}/documents/{documentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteDocument"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/access/roles/{role}": {
         parameters: {
             query?: never;
@@ -712,6 +984,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RolesBody: {
+            roles: string[];
+        };
+        RolesResult: {
+            code: string;
+            roles: string[];
+        };
         MatrixUpdate: {
             permissions: string[];
         };
@@ -826,6 +1105,10 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        ConnectStart: {
+            authorizationUrl: string;
+            state: string;
+        };
         AddMemberRequest: {
             /** Format: uuid */
             employeeId: string;
@@ -887,6 +1170,43 @@ export interface components {
         DecisionRequest: {
             note?: string | null;
         };
+        NewCollection: {
+            code: string;
+            name: string;
+        };
+        CollectionAdmin: {
+            code: string;
+            name: string;
+            /** Format: int32 */
+            documents: number;
+            /** Format: int32 */
+            chunks: number;
+            status: string;
+            /** Format: int32 */
+            failedDocuments: number;
+            /** Format: date-time */
+            lastSync?: string | null;
+            sourceTypes: string[];
+            roles: string[];
+            allEmployees: boolean;
+        };
+        WebSourceBody: {
+            urls: string[];
+            followLinks?: boolean | null;
+            /** Format: int32 */
+            maxPages?: number | null;
+            force?: boolean | null;
+        };
+        JobAccepted: {
+            jobId: string;
+            documentId?: string | null;
+            status: string;
+        };
+        DriveSourceBody: {
+            folderId: string;
+            recursive?: boolean | null;
+            force?: boolean | null;
+        };
         WebhookResult: {
             event?: string | null;
             /** Format: int32 */
@@ -946,12 +1266,25 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        FeedbackRequest: {
+            rating: string;
+            comment?: string | null;
+        };
+        FeedbackDto: {
+            /** Format: uuid */
+            messageId: string;
+            rating: string;
+            comment?: string | null;
+        };
         PublishRequest: {
             channels: string[];
         };
         PublishResult: {
             channel: string;
             status: string;
+            reason?: string | null;
+            message?: string | null;
+            postUrl?: string | null;
         };
         NewConversation: {
             title?: string | null;
@@ -974,6 +1307,8 @@ export interface components {
             caption: string;
             hashtags: string[];
             suggestedChannels: string[];
+            platform: string;
+            language: string;
         };
         Exchange: {
             userMessage: components["schemas"]["MessageDto"];
@@ -986,12 +1321,16 @@ export interface components {
             content: string;
             /** Format: date-time */
             createdAt: string;
+            status: string;
             sources: components["schemas"]["SourceDto"][];
             draft?: components["schemas"]["DraftDto"];
         };
         SourceDto: {
             title: string;
             collection: string;
+            /** Format: int32 */
+            page?: number | null;
+            sourceRef?: string | null;
         };
         CreateRoleRequest: {
             name: string;
@@ -1037,6 +1376,11 @@ export interface components {
             status?: "ACTIVE" | "ON_LEAVE" | "ONBOARDING" | "PENDING_APPROVAL" | "DEACTIVATED" | null;
             /** Format: date */
             joinedOn?: string | null;
+        };
+        DraftPatch: {
+            headline?: string | null;
+            caption?: string | null;
+            hashtags?: string[] | null;
         };
         GitSummary: {
             repo: string;
@@ -1091,6 +1435,41 @@ export interface components {
         TaskDetailResponse: {
             task: components["schemas"]["TaskDetailDto"];
             git: components["schemas"]["GitDetail"];
+        };
+        HistoryItem: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            createdAt: string;
+            channel: string;
+            channelName: string;
+            headline: string;
+            status: string;
+            reason?: string | null;
+            message?: string | null;
+            postUrl?: string | null;
+        };
+        HistoryPage: {
+            items: components["schemas"]["HistoryItem"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            total: number;
+        };
+        ConnectionDto: {
+            /** Format: uuid */
+            id: string;
+            provider: string;
+            type: string;
+            displayName: string;
+            status: string;
+            /** Format: date-time */
+            expiresAt?: string | null;
+            profileUrl?: string | null;
+            canDisconnect: boolean;
+            canReconnect: boolean;
         };
         RepoDto: {
             /** Format: int64 */
@@ -1210,6 +1589,54 @@ export interface components {
             /** Format: int32 */
             left?: number | null;
         };
+        JobFailure: {
+            sourceRef: string;
+            error: string;
+        };
+        KnowledgeJob: {
+            id: string;
+            collection: string;
+            kind: string;
+            status: string;
+            /** Format: int32 */
+            progress: number;
+            error?: string | null;
+            failures: components["schemas"]["JobFailure"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            finishedAt?: string | null;
+        };
+        KnowledgeOverview: {
+            aiServiceAvailable: boolean;
+            collections: components["schemas"]["CollectionAdmin"][];
+        };
+        KnowledgeDocument: {
+            id: string;
+            sourceType: string;
+            sourceRef: string;
+            title: string;
+            status: string;
+            error?: string | null;
+            /** Format: int32 */
+            chunkCount: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ActivityItem: {
+            jobId: string;
+            collection: string;
+            collectionName: string;
+            kind: string;
+            label: string;
+            startedBy: string;
+            /** Format: date-time */
+            startedAt: string;
+            status: string;
+            /** Format: int32 */
+            progress: number;
+            error?: string | null;
+        };
         EmployeePage: {
             items: components["schemas"]["EmployeeItem"][];
             /** Format: int32 */
@@ -1306,6 +1733,8 @@ export interface components {
             provider: string;
             connected: boolean;
             canPublish: boolean;
+            status: string;
+            accountName?: string | null;
         };
         CollectionDto: {
             code: string;
@@ -1329,6 +1758,32 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    roles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolesBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RolesResult"];
+                };
+            };
+        };
+    };
     matrix: {
         parameters: {
             query?: never;
@@ -1573,6 +2028,28 @@ export interface operations {
             };
         };
     };
+    connect: {
+        parameters: {
+            query?: {
+                target?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectStart"];
+                };
+            };
+        };
+    };
     members: {
         parameters: {
             query?: never;
@@ -1762,6 +2239,175 @@ export interface operations {
             };
         };
     };
+    collections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["KnowledgeOverview"];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewCollection"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CollectionAdmin"];
+                };
+            };
+        };
+    };
+    web: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebSourceBody"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobAccepted"];
+                };
+            };
+        };
+    };
+    drive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriveSourceBody"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobAccepted"];
+                };
+            };
+        };
+    };
+    reindex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobAccepted"];
+                };
+            };
+        };
+    };
+    documents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["KnowledgeDocument"][];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobAccepted"];
+                };
+            };
+        };
+    };
     webhook: {
         parameters: {
             query?: never;
@@ -1903,6 +2549,32 @@ export interface operations {
             };
         };
     };
+    feedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedbackDto"];
+                };
+            };
+        };
+    };
     publish: {
         parameters: {
             query?: never;
@@ -1949,7 +2621,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -1976,7 +2648,9 @@ export interface operations {
     send: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Accept?: string;
+            };
             path: {
                 id: string;
             };
@@ -1994,12 +2668,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Exchange"];
+                    "application/json": components["schemas"]["Exchange"];
+                    "text/event-stream": string;
                 };
             };
         };
     };
-    roles: {
+    roles_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2216,6 +2891,97 @@ export interface operations {
             };
         };
     };
+    editDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DraftDto"];
+                };
+            };
+        };
+    };
+    callback: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+                error?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    history: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HistoryPage"];
+                };
+            };
+        };
+    };
+    connections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectionDto"][];
+                };
+            };
+        };
+    };
     repos: {
         parameters: {
             query?: {
@@ -2414,6 +3180,48 @@ export interface operations {
             };
         };
     };
+    job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["KnowledgeJob"];
+                };
+            };
+        };
+    };
+    activity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivityItem"][];
+                };
+            };
+        };
+    };
     list_3: {
         parameters: {
             query?: {
@@ -2543,6 +3351,26 @@ export interface operations {
             };
         };
     };
+    disconnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     removeMember: {
         parameters: {
             query?: never;
@@ -2583,6 +3411,47 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["LeaveRequestDto"];
                 };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deleteDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+                documentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

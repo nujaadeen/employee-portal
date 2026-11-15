@@ -4,13 +4,13 @@ import type { Me } from '@/api/types'
 const EMPLOYEE = ['profile:read-own', 'profile:edit-own', 'leave:request', 'employee:directory', 'task:view', 'task:create', 'task:edit', 'ai:chat']
 const SALES = ['ai:knowledge:product', 'ai:knowledge:brand', 'ai:knowledge:campaign', 'social:publish:company', 'social:publish:personal']
 const MANAGER = ['leave:approve', 'employee:team']
-const HR = ['leave:approve', 'employee:team', 'employee:records', 'employee:manage']
+const HR = ['leave:approve', 'employee:team', 'employee:records', 'employee:manage', 'ai:knowledge:hr-policies']
 
 export const PEOPLE = {
   aisha: { name: 'Aisha Rahman', roles: ['EMPLOYEE', 'SALES'], permissions: [...EMPLOYEE, ...SALES] },
   omar: { name: 'Omar Haddad', roles: ['EMPLOYEE', 'MANAGER'], permissions: [...EMPLOYEE, ...MANAGER] },
   lena: { name: 'Lena Fischer', roles: ['EMPLOYEE', 'HR'], permissions: [...EMPLOYEE, ...HR] },
-  daniel: { name: 'Daniel Okoye', roles: ['EMPLOYEE', 'ADMIN', 'ENGINEER', 'MANAGER'], permissions: [...EMPLOYEE, ...MANAGER, ...HR, 'repo:view', 'access:manage', ...SALES] },
+  daniel: { name: 'Daniel Okoye', roles: ['EMPLOYEE', 'ADMIN', 'ENGINEER', 'MANAGER'], permissions: [...EMPLOYEE, ...MANAGER, ...HR, 'repo:view', 'access:manage', 'ai:knowledge:manage', ...SALES] },
 } as const
 
 export function meFor(key: keyof typeof PEOPLE): Me {
