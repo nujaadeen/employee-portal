@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ai_service.core.config import Settings
+from ai_service.core.errors import ProblemError
 from ai_service.db.models import Document, IngestJob
 from ai_service.rag.drive import DriveClient, DriveFile
 from ai_service.rag.extract import ExtractionError, extract_html, extract_pdf, extract_plain
@@ -17,6 +18,15 @@ from ai_service.rag.ingest import Indexer
 from ai_service.rag.web import WebFetcher, same_domain_links, validate_urls
 
 log = logging.getLogger(__name__)
+
+
+def _safe_error(exc: Exception) -> str:
+    """A short reason that is safe to store and return: our own messages, otherwise only the exception type."""
+    if isinstance(exc, ExtractionError):
+        return str(exc)[:500]
+    if isinstance(exc, ProblemError):
+        return exc.detail[:500]
+    return type(exc).__name__
 
 
 def upload_path(settings: Settings, collection: str, document_id: str) -> Path:
@@ -87,7 +97,7 @@ class JobWorker:
                     status, error = "FAILED", str(exc)
                 except Exception as exc:
                     log.exception("job %s failed", job_id)
-                    status, error = "FAILED", type(exc).__name__
+                    status, error = "FAILED", _safe_error(exc)
                 await s.rollback()
                 job = await s.get(IngestJob, job_id, populate_existing=True) or job  # a rollback in a runner expired it
                 job.status, job.error, job.failures = (
@@ -119,7 +129,7 @@ class JobWorker:
     async def _fail(self, s: AsyncSession, doc: Document, exc: Exception) -> dict[str, str]:
         doc_id, source_ref = doc.id, doc.source_ref  # read before the rollback expires the objects
         await s.rollback()
-        error = str(exc)[:500] if isinstance(exc, ExtractionError) else type(exc).__name__
+        error = _safe_error(exc)
         fresh = await s.get(Document, doc_id)
         if fresh is not None:
             fresh.status, fresh.error = "FAILED", error

@@ -112,3 +112,16 @@ Sign in as any dev user above. The Keycloak login page is the Baracel theme.
 `docker compose exec postgres psql -U postgres -c 'DROP DATABASE portal' -c 'CREATE DATABASE portal'` and restart the backend.
 
 **Prompt 04 notes.** The backend must include the gap fixes (members, config, roles, notifications). Creating or deleting roles from the portal needs the Keycloak service account to hold `manage-realm` (in the realm file; assign it by hand on an already imported realm). The frontend takes the Gitea address from `GET /api/config` (`GITEA_PUBLIC_URL` on the backend), so there is no `VITE_GITEA_URL` any more.
+
+## AI service (prompt 05)
+```bash
+cd infra
+docker compose up -d                                     # everything, Ollama on the GPU (NVIDIA Container Toolkit needed)
+docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d   # same, without a GPU
+docker compose exec ollama ollama pull qwen2.5:7b-instruct             # only if ollama-init has not pulled the model yet
+../scripts/apply-ai-client.sh      # only when your Keycloak volume was created before the client portal-backend-ai existed
+TOKEN=$(../scripts/get-ai-token.sh "ai:invoke ai:ingest")
+curl -s localhost:8000/readyz
+```
+The service listens on 127.0.0.1:8000 only; Chroma is not published (use `docker-compose.host-ai.yml` to run the service from source).
+More in `ai-service/README.md` and `docs/ai-service.md`. Tests: `cd ai-service && uv run pytest && uv run ruff check . && uv run mypy ai_service`.

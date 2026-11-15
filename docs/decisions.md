@@ -104,3 +104,15 @@ Recipients without a matching portal person (for example a Gitea user whose `git
 - **Gitea links** (Open in Gitea, PR and commit links, the host chip) are built from `giteaUrl` in `GET /api/config`, not from URLs stored by the backend.
 - **MFA** shows "MFA on", "MFA off" or "Managed by provider", each with its own icon and text.
 - **Notifications** use pages of 20 with a Load more button, an Unread only switch and Mark all as read. The badge uses the server's `unreadCount`.
+
+## AI service (prompt 05)
+- **Optional scopes.** `ai:invoke` and `ai:ingest` are *optional* client scopes of `portal-backend-ai`, so Spring asks for the scope it needs and a chat token cannot manage documents. The realm file now lists `clientScopes`, because Keycloak drops its built-in scopes (profile, roles, ...) when a realm import contains only some; the built-in definitions were exported from Keycloak 26.8.2 and copied in.
+- **Existing Keycloak volumes** are not changed by a realm file edit (the import skips an existing realm). `scripts/apply-ai-client.sh` adds the scopes and client through the Admin API. Nothing was dropped or reset.
+- **Ingest scope on reads.** All `/v1/collections*` and `/v1/jobs` routes, including GET, need `ai:ingest` (they expose document titles and counts).
+- **Intent detection** in `auto` mode is a keyword check (post, ad, caption, LinkedIn, Instagram, Facebook, social media, announcement); the caller can force `answer` or `social_post`. One fewer model call per message.
+- **Draft streaming.** A social draft is validated against its JSON schema and the platform limit before anything is sent, so it is not streamed token by token: one intro token, then `sources`, `draft`, `done`.
+- **Similarity threshold 0.45.** With bge-m3 unrelated text scored about 0.37 and related text 0.5 to 0.7. At 0.30 an unrelated brand chunk was passed to the model and it answered from general knowledge; 0.45 plus a stricter prompt gives a clear "I do not know".
+- **Token estimate.** Chunk sizes use about 4 characters per token, so chunking does not depend on a model tokenizer or a download.
+- **Failed documents** stay in the `document` table with status FAILED and a short reason, so the admin screen can show them.
+- **Hosts without a GPU in Docker.** The compose file reserves the GPU for `ollama` and `ai-service`; `docker-compose.cpu.yml` removes the reservation. On the development machine the NVIDIA Container Toolkit is not installed, so the verification run used host Ollama and the service from source (see the report).
+- **authlib.jose** is used for JWT checks; it prints a deprecation notice (joserfc is its successor). Moving is a small follow-up.

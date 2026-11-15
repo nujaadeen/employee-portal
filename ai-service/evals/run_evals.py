@@ -65,7 +65,10 @@ def main() -> None:
     latencies: list[float] = []
     for question, collection, title in GOLDEN:
         body = {
-            "message": question, "mode": "answer", "allowed_collections": allowed, "history": [],
+            "message": question,
+            "mode": "answer",
+            "allowed_collections": allowed,
+            "history": [],
             "user": {"id": "eval", "name": "Eval", "roles": []},
         }
         started = time.perf_counter()

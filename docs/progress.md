@@ -34,3 +34,14 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 7. MFA states with text and icon
 - [x] 8. Activity order note
 - [x] Tests (36 Vitest), Playwright (14), screenshots (06 board, 09 roles, 12 notifications), docs
+
+## Prompt 05 (AI service)
+- [x] 1. Project (ai-service/, uv lock, layout, Dockerfile)
+- [x] 2. Infrastructure (chroma, ollama, ollama-init, ai-db-init, ai-service, .env.example)
+- [x] 3. Keycloak client portal-backend-ai, scopes, audience mapper
+- [x] 4. Security and health (JWKS validation, scopes, problem responses, request id, /healthz, /readyz)
+- [x] 5. Providers (bge-m3, Ollama, OpenAI-compatible, fake, Chroma)
+- [x] 6. Ingestion (PDF, Drive, web, reindex, jobs, incremental, replace, delete)
+- [x] 7. Chat (retrieval filter, prompt, SSE, drafts with one retry)
+- [x] 8. Tests (29 pytest) and evals
+- [x] 9. Docs (README, docs/ai-service.md, OpenAPI, run.md)

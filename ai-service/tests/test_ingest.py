@@ -109,7 +109,7 @@ async def test_drive_not_configured_is_a_clear_failure(client: httpx.AsyncClient
     r = await client.post("/v1/collections/brand/sources/drive", headers=auth("ai:ingest"), json={"folder_id": "folder123"})
     await services.worker.wait_idle()
     job = (await client.get(f"/v1/jobs/{r.json()['job_id']}", headers=auth("ai:ingest"))).json()
-    assert job["status"] == "FAILED"
+    assert job["status"] == "FAILED" and "GOOGLE_SA_KEY_PATH" in job["error"]
 
 
 PAGE = "<html><head><title>{t}</title></head><body><article><h1>{t}</h1><p>{body}</p><a href='/about'>About</a><a href='https://other.example/x'>x</a></article></body></html>"
