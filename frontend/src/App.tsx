@@ -4,6 +4,7 @@ import { AccountsPage } from '@/features/accounts/AccountsPage'
 import { AiPage } from '@/features/ai/AiPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { EmployeesPage } from '@/features/employees/EmployeesPage'
+import { KnowledgePage } from '@/features/knowledge/KnowledgePage'
 import { LeavePage } from '@/features/leave/LeavePage'
 import { TaskDetailPage } from '@/features/tasks/TaskDetailPage'
 import { TasksPage } from '@/features/tasks/TasksPage'
@@ -24,6 +25,7 @@ export function App() {
         <Route path="tasks/:key" element={<RequirePermission permission="task:view"><TaskDetailPage /></RequirePermission>} />
         <Route path="ai" element={<RequirePermission permission="ai:chat"><AiPage /></RequirePermission>} />
         <Route path="ai/:id" element={<RequirePermission permission="ai:chat"><AiPage /></RequirePermission>} />
+        <Route path="knowledge" element={<RequirePermission permission="ai:knowledge:manage"><KnowledgePage /></RequirePermission>} />
         <Route path="accounts" element={<RequireAnyPermission permissions={['social:publish:company', 'social:publish:personal']}><AccountsPage /></RequireAnyPermission>} />
         <Route path="access" element={<RequirePermission permission="access:manage"><AccessPage /></RequirePermission>} />
         <Route path="profile" element={<ProfilePage />} />
