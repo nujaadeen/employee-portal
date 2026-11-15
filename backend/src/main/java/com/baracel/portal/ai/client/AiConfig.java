@@ -10,7 +10,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /** portal.ai.mode=http switches from the Phase 1 stub to the AI service. */
 @Configuration
-@EnableConfigurationProperties(AiProperties.class)
+@EnableConfigurationProperties({AiProperties.class, com.baracel.portal.ai.social.SocialProperties.class})
 public class AiConfig {
     @Bean
     @ConditionalOnProperty(name = "portal.ai.mode", havingValue = "http")

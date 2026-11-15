@@ -95,3 +95,18 @@ gitea:
   webhook-secret: ${GITEA_WEBHOOK_SECRET:}
   move-to-review-on-pr-open: true
   move-to-done-on-pr-merge: true
+
+social:
+  frontend-url: ${PORTAL_WEB_URL:http://localhost:5173}
+  crypto:
+    token-key: ${SOCIAL_TOKEN_KEY:}          # base64, 32 bytes: openssl rand -base64 32
+    token-key-id: ${SOCIAL_TOKEN_KEY_ID:k1}
+    old-keys: ${SOCIAL_TOKEN_OLD_KEYS:}      # id:base64,id2:base64 so values written with an old key stay readable
+  linkedin:
+    enabled: ${SOCIAL_LINKEDIN_ENABLED:false}                 # false: publishing is SIMULATED (local development)
+    company-enabled: ${SOCIAL_LINKEDIN_COMPANY_ENABLED:false} # company page posting needs LinkedIn approval (w_organization_social)
+    client-id: ${LINKEDIN_CLIENT_ID:}
+    client-secret: ${LINKEDIN_CLIENT_SECRET:}
+    redirect-uri: ${LINKEDIN_REDIRECT_URI:http://localhost:8080/api/social/linkedin/callback}
+    api-version: ${LINKEDIN_API_VERSION:202610}
+    company-organization-id: ${LINKEDIN_COMPANY_ORGANIZATION_ID:}

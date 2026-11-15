@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/integrations/gitea/webhook").permitAll()   // HMAC checked in the controller
+                .requestMatchers(HttpMethod.GET, "/api/social/linkedin/callback").permitAll()       // browser redirect from LinkedIn: identified by the one-time state
                 .anyRequest().authenticated())
             .oauth2ResourceServer(o -> o
                 .jwt(j -> j.jwtAuthenticationConverter(converter))
