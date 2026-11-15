@@ -1,0 +1,8 @@
+# Use on a machine without an NVIDIA GPU or without the NVIDIA Container Toolkit:
+#   docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+# Removes the GPU reservations. Embeddings and the LLM then run on the CPU (slow, but it works).
+services:
+  ollama:
+    deploy: !reset null
+  ai-service:
+    deploy: !reset null

@@ -55,6 +55,7 @@ services:
       FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-change-me}
       FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-change-me}
       PORTAL_SERVICE_CLIENT_SECRET: ${PORTAL_SERVICE_CLIENT_SECRET:-change-me-service-secret}
+      PORTAL_BACKEND_AI_CLIENT_SECRET: ${PORTAL_BACKEND_AI_CLIENT_SECRET:-change-me-backend-ai-secret}
       GITEA_OIDC_CLIENT_SECRET: ${GITEA_OIDC_CLIENT_SECRET:-change-me-gitea-oidc-secret}
       # Gitea (in Docker) reaches Keycloak as host.docker.internal; token and userinfo URLs follow the request host,
       # while the issuer and the browser login URL stay http://localhost:8180.
@@ -110,6 +111,121 @@ services:
       retries: 20
       start_period: 20s
 
+
+  # ---- AI service (Phase 2) -------------------------------------------------------------------------------------
+
+  # Creates the ai_service database. init.sql only runs on a brand new Postgres volume, so this also covers old volumes.
+  ai-db-init:
+    image: postgres:16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - psql -h postgres -U postgres -tc "SELECT 1 FROM pg_database WHERE datname='ai_service'" | grep -q 1 || psql -h postgres -U postgres -c "CREATE DATABASE ai_service"
+    restart: "no"
+
+  chroma:
+    image: chromadb/chroma:1.5.9
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes:
+      - chromadata:/data
+    # Not published on the host: only ai-service reaches it, over the compose network.
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8000 && printf \"GET /api/v2/heartbeat HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q nanosecond <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollamadata:/root/.ollama
+    # GPU reservation. Needs the NVIDIA Container Toolkit. Without a GPU, add -f docker-compose.cpu.yml (see docs/ai-service.md).
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+
+  # One-shot: pulls the chat model into the ollama volume (no-op when it is already there).
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull ${OLLAMA_MODEL:-qwen2.5:7b-instruct}"]
+    restart: "no"
+
+  ai-service:
+    build:
+      context: ../ai-service
+    depends_on:
+      ai-db-init:
+        condition: service_completed_successfully
+      chroma:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/ai_service
+      OIDC_ISSUER: http://localhost:8180/realms/baracel          # the issuer inside tokens
+      OIDC_JWKS_URL: http://keycloak:8180/realms/baracel/protocol/openid-connect/certs   # reachable from this container
+      OIDC_AUDIENCE: ai-service
+      CHROMA_URL: http://chroma:8000
+      AI_LLM_PROVIDER: ${AI_LLM_PROVIDER:-ollama}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-m3}
+      AI_MAX_UPLOAD_MB: ${AI_MAX_UPLOAD_MB:-25}
+      GOOGLE_SA_KEY_PATH: ${GOOGLE_SA_KEY_PATH:-}
+      UPLOAD_DIR: /data/uploads
+    ports:
+      - "127.0.0.1:8000:8000"   # localhost only
+    volumes:
+      - aiuploads:/data/uploads
+      - hfcache:/root/.cache/huggingface   # embedding model files, downloaded once
+      - ${GOOGLE_SA_KEY_HOST_PATH:-/dev/null}:/run/secrets/google-sa.json:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz').status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+
 volumes:
   pgdata:
   giteadata:
+  chromadata:
+  ollamadata:
+  aiuploads:
+  hfcache:
