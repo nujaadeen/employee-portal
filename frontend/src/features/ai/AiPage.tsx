@@ -1,31 +1,39 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Lock, Plus, Send, Sparkles } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Check, CircleAlert, Lock, Plus, RotateCcw, Send, Sparkles, Square } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, ApiError, unwrap } from '@/api/client'
-import type { components } from '@/api/schema'
+import { api, unwrap } from '@/api/client'
+import type { ChatMessage } from '@/api/types'
 import { roleName } from '@/lib/format'
 import { Button } from '@/ui/Button'
 import { IconButton } from '@/ui/IconButton'
 import { EmptyState } from '@/ui/EmptyState'
 import { SkeletonRows } from '@/ui/Skeleton'
 import { StatusPill } from '@/ui/StatusPill'
-import { DraftCard, Sources } from './DraftCard'
+import { AnswerText, Sources } from './Answer'
+import { DraftCard } from './DraftCard'
+import { useDraftEditor } from './draftEditor'
+import { Feedback } from './Feedback'
 import { PublishPanel } from './PublishPanel'
+import { useChatStream } from './useChatStream'
 import './ai.css'
 
-type Message = components['schemas']['MessageDto']
-
 const dayKey = (iso: string) => new Date(iso).toDateString()
+
+function DraftBlock({ message, a, onEdit }: { message: ChatMessage; a: AiAccessData; onEdit: () => void }) {
+  const editor = useDraftEditor(message.draft!)
+  return (<>
+    <DraftCard editor={editor} sources={message.sources ?? []} messageKey={message.id} />
+    <PublishPanel key={a ? 'ready' : 'wait'} editor={editor} suggested={message.draft!.suggestedChannels ?? []} access={a} onEdit={onEdit} />
+  </>)
+}
+type AiAccessData = import('@/api/types').AiAccess | undefined
 
 export function AiPage() {
   const { id } = useParams()
   const nav = useNavigate()
-  const qc = useQueryClient()
   const [params] = useSearchParams()
   const [text, setText] = useState(params.get('prompt') ?? '')
-  const [pending, setPending] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const end = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -33,23 +41,15 @@ export function AiPage() {
   const access = useQuery({ queryKey: ['ai', 'access'], queryFn: () => unwrap(api.GET('/api/ai/access')) })
   const conv = useQuery({ queryKey: ['ai', 'conversation', id], enabled: !!id, queryFn: () => unwrap(api.GET('/api/ai/conversations/{id}', { params: { path: { id: id! } } })) })
 
-  const send = useMutation({
-    mutationFn: async (message: string) => {
-      let cid = id
-      if (!cid) cid = (await unwrap(api.POST('/api/ai/conversations', { body: {} }))).id
-      await unwrap(api.POST('/api/ai/conversations/{id}/messages', { params: { path: { id: cid } }, body: { message } }))
-      return cid
-    },
-    onMutate: (m) => { setPending(m); setError(null); setText('') },
-    onSuccess: async (cid) => {
-      await qc.invalidateQueries({ queryKey: ['ai'] })
-      if (cid !== id) nav(`/ai/${cid}`)
-    },
-    onError: (e, m) => { setError(e instanceof ApiError ? e.message : 'The assistant could not answer.'); setText(m) },
-    onSettled: () => setPending(null),
-  })
-  const messages: Message[] = conv.data?.messages ?? []
-  useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages.length, pending])
+  const finished = useCallback((cid: string) => { if (cid !== id) nav(`/ai/${cid}`) }, [id, nav])
+  const chat = useChatStream(id, finished)
+  const st = chat.state
+  const streaming = st.status === 'streaming'
+  const messages: ChatMessage[] = conv.data?.messages ?? []
+  useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages.length, st.text, st.status])
+
+  const submit = () => { const t = text.trim(); if (t && !streaming) { setText(''); void chat.send(t) } }
+  const lastUser = [...messages].reverse().find((m) => m.role === 'USER')
 
   const today = new Date().toDateString()
   const convs = list.data ?? []
@@ -71,31 +71,51 @@ export function AiPage() {
       <section className="ai__chat" aria-label="Chat">
         <header className="ai__head">
           <div><h1>AI assistant</h1><p className="muted">Answers come from company knowledge you have access to</p></div>
-          <StatusPill>Simulated assistant · Phase 1</StatusPill>
         </header>
-        <div className="ai__thread" aria-live="polite">
-          {!id && !pending ? <EmptyState icon={<Sparkles size={24} />} title="Ask the assistant">Try “Write an Instagram and LinkedIn ad for our new merchant QR payments product”. It only uses knowledge your role allows.</EmptyState> : null}
+        <div className="sr-only" role="status" aria-live="polite">{streaming ? 'The assistant is writing an answer.' : st.status === 'stopped' ? 'Generation stopped.' : ''}</div>
+        <div className="ai__thread" role="log" aria-label="Conversation" aria-live="off" aria-busy={streaming}>
+          {!id && st.status === 'idle' ? <EmptyState icon={<Sparkles size={24} />} title="Ask the assistant">Try “Write a LinkedIn post about our autumn campaign”. It only uses knowledge your role allows.</EmptyState> : null}
           {id && conv.isPending ? <SkeletonRows rows={4} label="Loading conversation" /> : null}
           {conv.isError ? <p className="note note--danger" role="alert">Could not load this conversation. {conv.error.message}</p> : null}
           {messages.map((m) => m.role === 'USER' ? <div key={m.id} className="bubble bubble--user">{m.content}</div> : (
             <div key={m.id} className="ai__reply">
               <span className="ai__bot" aria-hidden="true">B</span>
               <div className="grow">
-                <p>{m.content}</p>
-                {m.draft ? (<>
-                  <DraftCard draft={m.draft} sources={m.sources ?? []} />
-                  <PublishPanel key={a ? 'ready' : 'wait'} draftId={m.draft.id} suggested={m.draft.suggestedChannels ?? []} access={a} onEdit={() => { setText('Change the tone of this draft: '); inputRef.current?.focus() }} />
-                </>) : <Sources sources={m.sources ?? []} />}
+                <AnswerText text={m.content} sources={m.sources ?? []} messageKey={m.id} />
+                {m.status === 'STOPPED' ? <p><StatusPill tone="warning">Stopped before the end</StatusPill></p> : null}
+                {m.status === 'FAILED' ? <p><StatusPill tone="danger">Answer interrupted</StatusPill></p> : null}
+                {m.draft ? <DraftBlock message={m} a={a} onEdit={() => { setText('Change the tone of this draft: '); inputRef.current?.focus() }} /> : <Sources sources={m.sources ?? []} messageKey={m.id} />}
+                {m.status === 'COMPLETE' ? <Feedback messageId={m.id} /> : lastUser && m === messages[messages.length - 1] ? <Button icon={<RotateCcw size={16} />} onClick={() => void chat.send(lastUser.content)}>Retry</Button> : null}
               </div>
             </div>
           ))}
-          {pending ? <><div className="bubble bubble--user">{pending}</div><p className="muted" role="status">The assistant is writing…</p></> : null}
-          {error ? <div className="banner banner--danger" role="alert">{error}</div> : null}
+          {st.question ? <div className="bubble bubble--user">{st.question}</div> : null}
+          {st.status !== 'idle' && (st.text || streaming) ? (
+            <div className="ai__reply">
+              <span className="ai__bot" aria-hidden="true">B</span>
+              <div className="grow">
+                <AnswerText text={st.text || '…'} sources={st.sources} messageKey="live" />
+                {streaming ? <div className="row"><Button icon={<Square size={14} />} onClick={chat.stop}>Stop generating</Button></div> : null}
+                {st.status === 'stopped' ? <p><StatusPill tone="warning">Stopped. The text so far is kept.</StatusPill></p> : null}
+                {st.sources.length ? <Sources sources={st.sources} messageKey="live" /> : null}
+              </div>
+            </div>
+          ) : null}
+          {st.status === 'error' && st.error ? (
+            <div className={`banner banner--${st.error.kind === 'pending' ? 'warning' : 'danger'}`} role="alert">
+              <CircleAlert size={18} aria-hidden="true" />
+              <div className="grow">
+                <strong>{st.error.kind === 'unavailable' ? 'Assistant unavailable' : st.error.kind === 'rate-limit' ? 'Slow down a little' : st.error.kind === 'pending' ? 'Waiting for approval' : 'The answer could not be completed'}</strong>
+                <p>{st.error.message}{st.text ? ' The part that arrived is kept above.' : ''}</p>
+              </div>
+              {st.error.kind !== 'pending' ? <Button icon={<RotateCcw size={16} />} onClick={chat.retry}>Retry</Button> : null}
+            </div>
+          ) : null}
           <div ref={end} />
         </div>
-        <form className="ai__input" onSubmit={(e) => { e.preventDefault(); if (text.trim() && !send.isPending) send.mutate(text.trim()) }}>
+        <form className="ai__input" onSubmit={(e) => { e.preventDefault(); submit() }}>
           <input ref={inputRef} aria-label="Message" placeholder={id ? 'Ask for a change, or start a new campaign' : 'Ask the assistant'} value={text} onChange={(e) => setText(e.target.value)} />
-          <IconButton type="submit" label="Send message" disabled={!text.trim() || send.isPending} className="ai__send"><Send size={20} /></IconButton>
+          <IconButton type="submit" label="Send message" disabled={!text.trim() || streaming} className="ai__send"><Send size={20} /></IconButton>
         </form>
       </section>
 

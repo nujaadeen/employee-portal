@@ -10,7 +10,8 @@ import { FacebookIcon, InstagramIcon, LinkedinIcon } from '@/ui/BrandIcons'
 
 const ICON: Record<string, React.ReactNode> = { INSTAGRAM: <InstagramIcon />, LINKEDIN: <LinkedinIcon />, FACEBOOK: <FacebookIcon /> }
 
-export function PublishPanel({ draftId, suggested, access, onEdit }: { draftId: string; suggested: string[]; access?: AiAccess; onEdit: () => void }) {
+export function PublishPanel({ editor, suggested, access, onEdit }: { editor: { draft: { id: string } }; suggested: string[]; access?: AiAccess; onEdit: () => void }) {
+  const draftId = editor.draft.id
   const qc = useQueryClient()
   const channels = access?.channels ?? []
   const [picked, setPicked] = useState<string[]>(() => suggested.filter((c) => channels.find((x) => x.code === c)?.canPublish))

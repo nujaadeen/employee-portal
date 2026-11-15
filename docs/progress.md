@@ -58,7 +58,7 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 
 ## Prompt 07 (frontend: streaming AI, publishing, knowledge base, accounts)
 - [x] 1. Regenerate types, navigation
-- [ ] 2. Streaming chat (screen 08)
+- [x] 2. Streaming chat (screen 08)
 - [ ] 3. Publish flow
 - [ ] 4. Connected accounts (screen 11)
 - [ ] 5. Knowledge base (screen 10)
