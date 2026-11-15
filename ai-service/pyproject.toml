@@ -1,0 +1,73 @@
+[project]
+name = "baracel-ai-service"
+version = "0.1.0"
+description = "Baracel AI service: FastAPI RAG service called only by the Spring backend"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "sqlalchemy>=2.0.36",
+  "alembic>=1.14",
+  "psycopg[binary]>=3.2",
+  "httpx>=0.27",
+  "chromadb>=1.0",
+  "pymupdf>=1.24",
+  "trafilatura>=2.0",
+  "google-api-python-client>=2.150",
+  "google-auth>=2.35",
+  "authlib>=1.3",
+  "python-multipart>=0.0.12",
+  "langdetect>=1.0.9",
+]
+
+[project.optional-dependencies]
+# Heavy: torch and the embedding/reranker models. Installed in the Docker image and for real runs.
+ml = ["sentence-transformers>=3.3"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "ruff>=0.8",
+  "mypy>=1.13",
+  "reportlab>=4.2",
+  "respx>=0.21",
+  "types-requests",
+  "aiosqlite>=0.22.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ai_service"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py312"
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "S"]
+ignore = ["S101", "E501"]
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]
+"evals/*" = ["S"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["alembic/"]
+[[tool.mypy.overrides]]
+module = ["chromadb.*", "authlib.*", "trafilatura.*", "langdetect.*", "googleapiclient.*", "google.*", "fitz.*", "sentence_transformers.*", "reportlab.*", "torch.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.File", "fastapi.Path"]
