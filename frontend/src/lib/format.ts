@@ -74,3 +74,24 @@ export function longRange(from: string, to: string): string {
   const a = parseDate(from), b = parseDate(to)
   return a.getMonth() === b.getMonth() ? `${a.getDate()} to ${b.getDate()} ${MONTHS_LONG[b.getMonth()]}` : `${a.getDate()} ${MONTHS_LONG[a.getMonth()]} to ${b.getDate()} ${MONTHS_LONG[b.getMonth()]}`
 }
+
+/** "Today 14:31", "Yesterday 17:05", "9 Nov 11:20". `now` is passed in so it can be tested. */
+export function whenLabel(iso: string, now = new Date()): string {
+  const d = new Date(iso)
+  const p = (n: number) => String(n).padStart(2, '0')
+  const time = `${p(d.getHours())}:${p(d.getMinutes())}`
+  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const days = Math.round((start(now) - start(d)) / 86400000)
+  if (days === 0) return `Today ${time}`
+  if (days === 1) return `Yesterday ${time}`
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${time}`
+}
+
+/** "52 days", "1 day", "today", or null when the date is unknown. Negative values become "expired". */
+export function daysUntil(iso: string | null | undefined, now = new Date()): string | null {
+  if (!iso) return null
+  const days = Math.ceil((new Date(iso).getTime() - now.getTime()) / 86400000)
+  if (days < 0) return 'expired'
+  if (days === 0) return 'today'
+  return `${days} ${days === 1 ? 'day' : 'days'}`
+}

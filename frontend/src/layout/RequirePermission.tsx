@@ -7,3 +7,9 @@ export function RequirePermission({ permission, children }: { permission: string
   const { has } = usePermissions()
   return has(permission) ? <>{children}</> : <Forbidden />
 }
+
+/** Like RequirePermission, but any one of the permissions is enough. */
+export function RequireAnyPermission({ permissions, children }: { permissions: string[]; children: ReactNode }) {
+  const { has } = usePermissions()
+  return permissions.some(has) ? <>{children}</> : <Forbidden />
+}
