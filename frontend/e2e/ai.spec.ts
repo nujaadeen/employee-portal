@@ -64,6 +64,7 @@ test.describe('AI assistant as Aisha Rahman (SALES)', () => {
       await expect(b).toContainText('Coming later')
     }
     await expect(page.getByRole('button', { name: 'Schedule' })).toHaveCount(0)
+    await page.locator('.ai__thread').evaluate((el) => { el.scrollTop = 0 })   // the top of the conversation, like the design
     await shot(page, '08-ai-assistant-aisha')
 
     // publish: confirm dialog shows the exact text and the accounts; a double click posts once
@@ -96,6 +97,32 @@ test.describe('AI assistant as Aisha Rahman (SALES)', () => {
     await shot(page, '11-social-accounts-aisha')
     await context.close()
   })
+})
+
+test('Connected accounts with LinkedIn switched on (answers faked in the browser) shows Connect, Reconnect and Disconnect', async ({ browser }) => {
+  const { context, page } = await asUser(browser, 'aisha.rahman', '/')
+  const json = (body: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route('**/api/social/connections', (r) => r.fulfill(json([
+    { id: 'c1', provider: 'LINKEDIN', type: 'COMPANY', displayName: 'Baracel', status: 'CONNECTED', expiresAt: null, profileUrl: 'https://www.linkedin.com/company/1', canDisconnect: false, canReconnect: false },
+    { id: 'p1', provider: 'LINKEDIN', type: 'PERSONAL', displayName: 'Aisha Rahman', status: 'EXPIRED', expiresAt: '2026-11-01T00:00:00Z', profileUrl: null, canDisconnect: true, canReconnect: true },
+  ])))
+  await page.route('**/api/ai/access', (r) => r.fulfill(json({ roles: ['SALES'], collections: [], companyChannels: 1, personalChannels: 1, channels: [
+    { code: 'company-linkedin', name: 'Company LinkedIn', type: 'COMPANY', provider: 'LINKEDIN', connected: true, canPublish: true, status: 'CONNECTED' },
+    { code: 'personal-linkedin-aisha', name: 'My LinkedIn (personal)', type: 'PERSONAL', provider: 'LINKEDIN', connected: false, canPublish: false, status: 'EXPIRED' },
+  ] })))
+  await page.goto('/accounts')
+  const company = page.getByRole('heading', { name: 'Company LinkedIn page' }).locator('xpath=ancestor::section[1]')
+  await expect(company).toContainText('Connected')
+  await expect(company.getByRole('link', { name: /View page/ })).toBeVisible()
+  await expect(company.getByRole('button', { name: /Reconnect|Disconnect/ })).toHaveCount(0)   // Aisha cannot manage the company page
+  const mine = page.getByRole('heading', { name: 'My LinkedIn' }).locator('xpath=ancestor::section[1]')
+  await expect(mine).toContainText('Expired')
+  await expect(mine.getByRole('button', { name: 'Reconnect' })).toBeVisible()
+  await mine.getByRole('button', { name: 'Disconnect' }).click()
+  await expect(page.getByRole('dialog', { name: 'Disconnect My LinkedIn?' })).toContainText('Past posts stay on LinkedIn')
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await shot(page, '11-social-accounts-connected-aisha')
+  await context.close()
 })
 
 test.describe('AI assistant as Lena Fischer (HR)', () => {

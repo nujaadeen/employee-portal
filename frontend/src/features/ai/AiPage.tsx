@@ -73,7 +73,7 @@ export function AiPage() {
         {list.isPending ? <SkeletonRows rows={4} label="Loading conversations" /> : list.isError ? <p className="note note--danger" role="alert">Could not load conversations.</p>
           : convs.length === 0 ? <p className="muted">No conversations yet.</p> : groups.map(([label, items]) => items.length ? (
             <div key={label}><div className="label-caps ai__group">{label}</div>
-              {items.map((c) => <Link key={c.id} to={`/ai/${c.id}`} className="ai__conv" aria-current={c.id === id ? 'page' : undefined}>{c.title}</Link>)}</div>) : null)}
+              {items.map((c) => <Link key={c.id} to={`/ai/${c.id}`} title={c.title} className="ai__conv" aria-current={c.id === id ? 'page' : undefined}>{c.title}</Link>)}</div>) : null)}
       </aside>
 
       <section className="ai__chat" aria-label="Chat">
@@ -135,7 +135,7 @@ export function AiPage() {
           <ul className="plain-list">
             {(a?.collections ?? []).map((c) => (
               <li key={c.code} className="ai__acc">{c.allowed ? <Check size={16} aria-hidden="true" style={{ color: 'var(--success)' }} /> : <Lock size={16} aria-hidden="true" className="muted" />}
-                <span className="grow">{c.name}</span><span className="muted">{c.allowed ? `${c.docCount} docs` : 'No access'}</span></li>
+                <span className="grow">{c.name}</span><span className="muted">{c.allowed ? `${c.docCount} ${c.docCount === 1 ? 'doc' : 'docs'}` : 'No access'}</span></li>
             ))}
           </ul>
         )}

@@ -129,3 +129,27 @@ Recipients without a matching portal person (for example a Gitea user whose `git
 - **Not done.** Revoking the token at LinkedIn on disconnect (the token is only wiped here), media posts, scheduling, Instagram and Facebook (COMING_LATER), and removing the personal channel rows created on first use.
 - **Callback is public.** `GET /api/social/linkedin/callback` has no bearer token (the browser comes from LinkedIn). The one-time state, bound to the person who started the connect, is the only credential; a wrong, replayed or expired state is refused without calling LinkedIn.
 - **Secrets.** The LinkedIn client secret was found in DEBUG logs of Spring's form converter during tests; the token request is now sent as pre-encoded bytes so it is not logged. A test searches all log output and all API responses for tokens.
+
+## Frontend: AI, publishing, knowledge base, accounts (prompt 07)
+- **fetch for the stream.** `EventSource` cannot send an Authorization header, so the chat uses `fetch` and a small parser (`sse.ts`). Leaving the page or pressing Stop aborts the request; the backend then saves the partial answer as STOPPED and the page shows it from the server.
+- **Retry sends the question again**, so after an interrupted answer the conversation holds the question twice. Keeping one copy would need an endpoint to retry a message; not asked for.
+- **Publish needs a confirmation** that shows the exact text, and unsaved edits are saved first, so what was confirmed is what is posted. A double click sends one request (a lock in the component, and the backend is idempotent as well). After PUBLISHED, SIMULATED or UNKNOWN the draft becomes read-only and that channel cannot be picked again; after a definite FAILED it can.
+- **A person without a publish permission sees no picker**, only Copy text, instead of a picker full of disabled channels.
+- **Knowledge base role chips** use the role list from `GET /api/access/roles` (all roles, custom ones too) and fall back to the six built-in roles when that endpoint is refused (see `docs/backend-gaps.md`). ADMIN is always on, like on the server.
+- **Upload progress** uses `XMLHttpRequest`, because `fetch` cannot report upload progress. The 25 MB limit is a constant that mirrors `AI_MAX_UPLOAD_MB`; the server still decides.
+- **Polling** is React Query's `refetchInterval` (3 s) while the activity list holds a QUEUED or RUNNING job. It stops by itself when the job ends or the page is left.
+
+### Visual check against screens 08, 10 and 11 (1440 px)
+Compared `e2e/screenshots/08-ai-assistant-aisha.png`, `10-knowledge-base-daniel.png`, `11-social-accounts-aisha.png` and `11-social-accounts-connected-aisha.png` with the PNGs in `design/screens/`.
+| Screen | Difference | Decision |
+|---|---|---|
+| 08 | The "Ollama · local model" badge is missing | No endpoint tells the model (`docs/backend-gaps.md`). The old "Simulated assistant · Phase 1" pill is gone. |
+| 08 | The draft card has editable fields under the art, the design shows static text | Asked for in the prompt (edit before publishing). The art keeps the sample look and follows the headline. |
+| 08 | The right panel lists every channel with its state; the design shows "Company accounts (3)" and "Personal accounts" | More honest now that channels have their own state (Coming later, Simulated, Not connected). |
+| 08 | No Schedule button | Removed as asked. |
+| 08 | Long conversation titles are cut with an ellipsis (full title as tooltip) | The first version wrapped over the next item. A real bug found by the screenshot. |
+| 10 | Role chips and role toggles are 44 px high (the design about 30 px) | The 44 px touch target rule in BRAND.md. |
+| 10 | The right panel groups documents by source type ("4 PDF files"), the design lists a Drive folder, PDFs and a website with sync times | The AI service has no per-source record (`docs/ai-service-gaps.md`); the website rows are shown per URL. |
+| 10 | The table shows "No documents" for an empty collection | The design has no empty collection. |
+| 11 | In development (LinkedIn switched off) the cards say Simulated and have no Connect button | Connecting is refused by the backend then (`409 linkedin-disabled`). The connected look is checked with `11-social-accounts-connected-aisha.png` (API answers faked in the browser). |
+| 11 | "Access renews automatically" is not claimed | LinkedIn gives refresh tokens only to approved partners; the card says when access expires. |

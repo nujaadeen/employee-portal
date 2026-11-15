@@ -10,3 +10,9 @@ All eight gaps are fixed by prompt 03 (see docs/api.md), and the frontend no lon
 6. ~~MFA state is only known for the password method.~~ **Fixed:** `signInMethods[].mfa` is `ENABLED`, `DISABLED` or `PROVIDER_MANAGED`.
 7. ~~The generated API types make every field optional.~~ **Fixed:** every record component is `required` in `docs/openapi.json` unless marked `@Nullable`, which is optional and accepts null.
 8. ~~Activity feed is newest first only.~~ **Fixed:** `GET /api/tasks/{key}?activityOrder=asc|desc` (default `desc`).
+
+## Prompt 07 (AI, publishing, knowledge base)
+- **Which model answers.** The sample screen 08 shows a badge "Ollama · local model". No endpoint says which provider or model is in use (`GET /api/config` has only the app name, the Gitea address and the leave types), so the badge is not shown. Workaround: none needed for function. Suggested: add `aiProvider` and `aiModel` to `GET /api/config`.
+- **Roles list for the Knowledge base.** `GET /api/access/roles` needs `access:manage`; a person with only `ai:knowledge:manage` would get 403, so the role chips fall back to the six built-in roles (custom roles are then missing). Suggested: allow `ai:knowledge:manage` on that endpoint, or add the role names to `GET /api/knowledge/collections`.
+- **Per-source information** (Drive folder name, "synced 2 days ago", "Stale") is not available, see `docs/ai-service-gaps.md`. The detail panel groups the documents by source type instead.
+- **No endpoint for a draft's publish state.** After a reload the draft card does not know it was already published, so the edit form is open and a later edit answers `409 draft-published`, shown as an error under the form. Suggested: add `published` (or the results) to `DraftDto`.

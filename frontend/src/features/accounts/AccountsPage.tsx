@@ -61,7 +61,7 @@ function LinkedInCard({ kind, channel, connection, canManage }: { kind: Target; 
     <Card className="acct">
       <div className="acct__top"><span className="acct__icon"><LinkedinIcon /></span>{statusPill(channel, connection)}</div>
       <h2 className="acct__title">{title}</h2>
-      <p className="acct__name muted">{connection ? (company ? `${connection.displayName} · managed by Admin` : connection.displayName) : 'Not connected'}</p>
+      <p className="acct__name muted">{connection ? (company ? `${connection.displayName} · managed by Admin` : connection.displayName) : simulated ? 'No real account (development)' : 'Not connected'}</p>
       {company && connection ? <p className="acct__text muted">You can post here because your role allows publishing to company accounts.</p> : null}
       {!company && connection && expires && !expired ? <p className="acct__text muted">Access expires in {expires}. Reconnect before then to keep publishing.</p> : null}
       {expired ? <p className="acct__text acct__text--bad" role="status">The connection expired. Reconnect to publish again.</p> : null}

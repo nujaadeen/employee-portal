@@ -23,3 +23,10 @@ Environment (`.env.example`): `VITE_API_URL`, `VITE_OIDC_AUTHORITY`, `VITE_OIDC_
 ## Rules worth knowing
 - Hide what the user may not use with `<Can permission="...">`; the backend still answers 403.
 - A 403 with problem type `pending-approval` shows the Waiting for approval page.
+
+## Phase 2 screens (AI assistant, Knowledge base, Connected accounts)
+* `src/features/ai`: the chat reads the answer as server-sent events with `fetch` and `sse.ts` (EventSource cannot send the bearer token). `useChatStream` keeps the state (tokens, sources, draft, errors), **Stop generating** aborts the request and keeps the partial text (the server saves it as STOPPED), and a retry control follows errors. The live region announces only "The assistant is writing an answer", never every token. `[1]` citations link to the matching source chip. The draft card edits headline, caption and hashtags (`PATCH /api/ai/drafts/{id}`, LinkedIn limit 3000 characters, hint at 1300). `PublishPanel` shows channels from `GET /api/ai/access`, asks for a confirmation with the exact text, and shows one result per channel (`publishResult.ts`). A person without a publish permission only sees Copy text.
+* `src/features/accounts`: LinkedIn cards, Connect (redirects to the URL the backend returns), the return flag (`?linkedin=...`) and the publishing history with paging.
+* `src/features/knowledge`: stats, collections, detail panel with role chips, the Add source dialog (PDF upload with progress through `XMLHttpRequest`, Drive folder, website) and Indexing activity. Jobs are polled every 3 seconds while one runs; React Query stops when the page is left.
+
+**Tests.** `npm test` has the stream parser (split chunks, error event, abort), the publish result mapping, the character counter, citations, source validation, permission based navigation, the publish panel and the accounts page. The Playwright specs `ai.spec.ts` and `knowledge.spec.ts` need the AI service running with the **fake LLM** (see `docs/run.md`, "AI end-to-end tests"): answers are then instant and deterministic.

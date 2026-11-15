@@ -138,3 +138,17 @@ cd backend && SPRING_PROFILES_ACTIVE=local mvn -q spring-boot:run
 * Real LinkedIn: create an app at https://www.linkedin.com/developers/apps, add the products "Sign In with LinkedIn using OpenID Connect" and "Share on LinkedIn", register `LINKEDIN_REDIRECT_URI` (`http://localhost:8080/api/social/linkedin/callback`), set `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` and `SOCIAL_LINKEDIN_ENABLED=true`. The company page needs LinkedIn's approval for `w_organization_social`; keep `SOCIAL_LINKEDIN_COMPANY_ENABLED=false` until then.
 * Knowledge base: Daniel (ADMIN) can call `/api/knowledge/*`. Collection access is edited with `PUT /api/knowledge/collections/{code}/roles`.
 * `mvn verify` runs 167 tests including WireMock stand-ins for the AI service, Keycloak and LinkedIn (no network needed).
+
+## AI end-to-end tests (frontend, prompt 07)
+The Playwright specs `frontend/e2e/ai.spec.ts` and `frontend/e2e/knowledge.spec.ts` run against the real stack with the AI service on its **fake LLM**: deterministic answers that cite the retrieved sources, valid drafts, no GPU wait. Embeddings and the vector store are real.
+```bash
+cd infra && docker compose -f docker-compose.yml -f docker-compose.host-ai.yml up -d postgres chroma keycloak ai-db-init    # Chroma on 127.0.0.1:8001
+cd ../ai-service && uv sync --extra ml
+export DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5433/ai_service CHROMA_URL=http://localhost:8001 \
+       UPLOAD_DIR=$PWD/data/uploads AI_LLM_PROVIDER=fake          # <- the switch
+uv run alembic upgrade head && uv run uvicorn ai_service.main:app_factory --factory --port 8000
+# the backend in http mode with LinkedIn switched off (publishing is SIMULATED), see "Spring with the AI service and LinkedIn"
+cd ../backend && AI_MODE=http PORTAL_BACKEND_AI_CLIENT_SECRET=change-me-backend-ai-secret SPRING_PROFILES_ACTIVE=local mvn -q spring-boot:run
+cd ../frontend && npx playwright test e2e/ai.spec.ts e2e/knowledge.spec.ts
+```
+The product, brand, campaign and engineering collections need some documents: `uv run python evals/run_evals.py --token "$(../scripts/get-ai-token.sh 'ai:invoke ai:ingest')"` uploads the samples. For real answers use `AI_LLM_PROVIDER=ollama` (the default) instead. The tests add and remove their own PDF in Product catalogue and put the HR policies roles back.
