@@ -19,7 +19,7 @@ public record AiProperties(
             @DefaultValue("") String clientSecret,
             @DefaultValue("3s") Duration connectTimeout,
             @DefaultValue("90s") Duration chatTimeout,
-            @DefaultValue("30s") Duration streamIdleTimeout,
+            @DefaultValue("120s") Duration streamIdleTimeout,
             @DefaultValue("15s") Duration adminTimeout,
             @DefaultValue("25") int maxUploadMb) {}
 

@@ -79,7 +79,7 @@ portal:
       client-secret: ${PORTAL_BACKEND_AI_CLIENT_SECRET:}
       connect-timeout: 3s
       chat-timeout: 90s
-      stream-idle-timeout: 30s
+      stream-idle-timeout: 120s     # the first token can take a while when the model is cold (local GPU)
       admin-timeout: 15s
       max-upload-mb: ${AI_MAX_UPLOAD_MB:25}
     breaker:

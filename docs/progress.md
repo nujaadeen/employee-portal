@@ -54,4 +54,4 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 5. Config
 - [x] 6. Tests (167 passing)
 - [x] 7. Contract and docs
-- [ ] 8. Run it
+- [x] 8. Run it (streamed chat, Lena without product sources, PDF through Spring, simulated publish; real LinkedIn post not run)
