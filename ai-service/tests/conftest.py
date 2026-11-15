@@ -7,7 +7,8 @@ from typing import Any
 import httpx
 import pytest
 import pytest_asyncio
-from authlib.jose import JsonWebKey, jwt
+from joserfc import jwt
+from joserfc.jwk import KeySet, RSAKey
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -22,8 +23,8 @@ from ai_service.providers.vectorstore import ChromaVectorStore
 from tests.fakes import CountingEmbedder, FakeDrive, FakeWeb
 
 ISSUER = "http://localhost:8180/realms/baracel"
-_KEY = JsonWebKey.generate_key("RSA", 2048, is_private=True, options={"kid": "test-key"})
-_OTHER_KEY = JsonWebKey.generate_key("RSA", 2048, is_private=True, options={"kid": "other-key"})
+_KEY = RSAKey.generate_key(2048, parameters={"kid": "test-key"})
+_OTHER_KEY = RSAKey.generate_key(2048, parameters={"kid": "other-key"})
 
 
 def make_token(
@@ -39,7 +40,7 @@ def make_token(
         "iat": now,
         "exp": now + exp_in,
     }
-    return jwt.encode({"alg": "RS256", "kid": key.as_dict()["kid"]}, claims, key).decode()
+    return jwt.encode({"alg": "RS256", "kid": key.kid}, claims, key)
 
 
 def auth(scopes: str = "ai:invoke") -> dict[str, str]:
@@ -88,7 +89,7 @@ def settings(tmp_path: Path) -> Settings:
 @pytest_asyncio.fixture
 async def services(settings: Settings) -> AsyncIterator[Services]:
     security.reset_jwks_cache()
-    security._cache.keys = JsonWebKey.import_key_set({"keys": [_KEY.as_dict(is_private=False)]})
+    security._cache.keys = KeySet.import_key_set({"keys": [_KEY.as_dict(private=False)]})
     security._cache.fetched_at = time.monotonic() + 10_000
     engine = create_async_engine(settings.database_url)
     async with engine.begin() as conn:

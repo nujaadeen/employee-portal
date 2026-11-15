@@ -7,10 +7,11 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
-from authlib.jose import JsonWebKey, KeySet, jwt
-from authlib.jose.errors import JoseError
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from joserfc import jwt
+from joserfc.errors import JoseError
+from joserfc.jwk import KeySet
 
 from ai_service.core.config import Settings, get_settings
 from ai_service.core.errors import ProblemError
@@ -33,7 +34,7 @@ class JwksCache:
                     async with httpx.AsyncClient(timeout=5.0) as client:
                         resp = await client.get(settings.jwks_url)
                         resp.raise_for_status()
-                    self.keys = JsonWebKey.import_key_set(resp.json())
+                    self.keys = KeySet.import_key_set(resp.json())
                     self.fetched_at = time.monotonic()
                 except (httpx.HTTPError, ValueError) as exc:
                     if self.keys is None:
@@ -58,24 +59,22 @@ def _unauthorized(detail: str) -> ProblemError:
 
 
 async def _decode(token: str, settings: Settings) -> dict[str, Any]:
+    registry = jwt.JWTClaimsRegistry(
+        leeway=settings.oidc_leeway_seconds,
+        iss={"essential": True, "value": settings.oidc_issuer},
+        aud={"essential": True, "value": settings.oidc_audience},
+        exp={"essential": True},
+    )
     for attempt in (0, 1):
         keys = await _cache.get(settings, force=attempt == 1)
         try:
-            claims = jwt.decode(token, keys)
-            claims.validate(leeway=settings.oidc_leeway_seconds)  # exp, nbf, iat
-            if claims.get("iss") != settings.oidc_issuer:
-                raise _unauthorized("Invalid issuer")
-            aud = claims.get("aud")
-            audiences = [aud] if isinstance(aud, str) else list(aud or [])
-            if settings.oidc_audience not in audiences:
-                raise _unauthorized("Invalid audience")
-            return dict(claims)
-        except ProblemError:
-            raise
+            decoded = jwt.decode(token, keys, algorithms=["RS256"])  # only RS256: no alg confusion
+            registry.validate(decoded.claims)  # issuer, audience, expiry
+            return dict(decoded.claims)
         except (JoseError, ValueError, KeyError):
             if attempt == 0:
                 continue  # keys may have rotated: refetch once
-            raise _unauthorized("Invalid or expired token") from None
+            raise _unauthorized("Invalid, expired or wrong-audience token") from None
     raise _unauthorized("Invalid or expired token")
 
 
