@@ -13,6 +13,42 @@
     "bearer" : [ ]
   } ],
   "paths" : {
+    "/api/knowledge/collections/{code}/roles" : {
+      "put" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "roles",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RolesBody"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RolesResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/access/roles/{role}/matrix" : {
       "get" : {
         "tags" : [ "Roles and access" ],
@@ -338,6 +374,33 @@
         }
       }
     },
+    "/api/social/linkedin/connect" : {
+      "post" : {
+        "tags" : [ "Social accounts" ],
+        "operationId" : "connect",
+        "parameters" : [ {
+          "name" : "target",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "personal"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConnectStart"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{key}/members" : {
       "get" : {
         "tags" : [ "Tasks" ],
@@ -584,6 +647,217 @@
         }
       }
     },
+    "/api/knowledge/collections" : {
+      "get" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "collections",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/KnowledgeOverview"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "create_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewCollection"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CollectionAdmin"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/collections/{code}/sources/web" : {
+      "post" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "web",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WebSourceBody"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "description" : "Accepted",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JobAccepted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/collections/{code}/sources/drive" : {
+      "post" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "drive",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DriveSourceBody"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "description" : "Accepted",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JobAccepted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/collections/{code}/reindex" : {
+      "post" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "reindex",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "202" : {
+            "description" : "Accepted",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JobAccepted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/collections/{code}/documents" : {
+      "get" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "documents",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/KnowledgeDocument"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "upload",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                },
+                "required" : [ "file" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "202" : {
+            "description" : "Accepted",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JobAccepted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/integrations/gitea/webhook" : {
       "post" : {
         "tags" : [ "Gitea" ],
@@ -760,6 +1034,43 @@
         }
       }
     },
+    "/api/ai/messages/{id}/feedback" : {
+      "post" : {
+        "tags" : [ "AI assistant" ],
+        "operationId" : "feedback",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeedbackDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/ai/drafts/{id}/publish" : {
       "post" : {
         "tags" : [ "AI assistant" ],
@@ -822,7 +1133,7 @@
       },
       "post" : {
         "tags" : [ "AI assistant" ],
-        "operationId" : "create_2",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -858,6 +1169,13 @@
             "type" : "string",
             "format" : "uuid"
           }
+        }, {
+          "name" : "Accept",
+          "in" : "header",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
         } ],
         "requestBody" : {
           "content" : {
@@ -873,9 +1191,14 @@
           "200" : {
             "description" : "OK",
             "content" : {
-              "*/*" : {
+              "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Exchange"
+                }
+              },
+              "text/event-stream" : {
+                "schema" : {
+                  "type" : "string"
                 }
               }
             }
@@ -886,7 +1209,7 @@
     "/api/access/roles" : {
       "get" : {
         "tags" : [ "Roles and access" ],
-        "operationId" : "roles",
+        "operationId" : "roles_1",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -1166,6 +1489,134 @@
         }
       }
     },
+    "/api/ai/drafts/{id}" : {
+      "patch" : {
+        "tags" : [ "AI assistant" ],
+        "operationId" : "editDraft",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DraftPatch"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DraftDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/social/linkedin/callback" : {
+      "get" : {
+        "tags" : [ "Social accounts" ],
+        "operationId" : "callback",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "state",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "error",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/api/social/history" : {
+      "get" : {
+        "tags" : [ "Social accounts" ],
+        "operationId" : "history",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HistoryPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/social/connections" : {
+      "get" : {
+        "tags" : [ "Social accounts" ],
+        "operationId" : "connections",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/repos" : {
       "get" : {
         "tags" : [ "Gitea" ],
@@ -1435,6 +1886,53 @@
         }
       }
     },
+    "/api/knowledge/jobs/{id}" : {
+      "get" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "job",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/KnowledgeJob"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/activity" : {
+      "get" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "activity",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ActivityItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/employees" : {
       "get" : {
         "tags" : [ "Employees" ],
@@ -1601,6 +2099,26 @@
         }
       }
     },
+    "/api/social/connections/{id}" : {
+      "delete" : {
+        "tags" : [ "Social accounts" ],
+        "operationId" : "disconnect",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
     "/api/projects/{key}/members/{employeeId}" : {
       "delete" : {
         "tags" : [ "Tasks" ],
@@ -1655,6 +2173,51 @@
         }
       }
     },
+    "/api/knowledge/collections/{code}" : {
+      "delete" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
+    "/api/knowledge/collections/{code}/documents/{documentId}" : {
+      "delete" : {
+        "tags" : [ "Knowledge base" ],
+        "operationId" : "deleteDocument",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "documentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
     "/api/access/roles/{role}" : {
       "delete" : {
         "tags" : [ "Roles and access" ],
@@ -1677,6 +2240,34 @@
   },
   "components" : {
     "schemas" : {
+      "RolesBody" : {
+        "type" : "object",
+        "properties" : {
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "minItems" : 1
+          }
+        },
+        "required" : [ "roles" ]
+      },
+      "RolesResult" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "code", "roles" ]
+      },
       "MatrixUpdate" : {
         "type" : "object",
         "properties" : {
@@ -1992,6 +2583,18 @@
         },
         "required" : [ "author", "authorId", "body", "createdAt", "id" ]
       },
+      "ConnectStart" : {
+        "type" : "object",
+        "properties" : {
+          "authorizationUrl" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "authorizationUrl", "state" ]
+      },
       "AddMemberRequest" : {
         "type" : "object",
         "properties" : {
@@ -2144,6 +2747,120 @@
             "type" : [ "string", "null" ]
           }
         }
+      },
+      "NewCollection" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "code", "name" ]
+      },
+      "CollectionAdmin" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "documents" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "chunks" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "failedDocuments" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lastSync" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "sourceTypes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "allEmployees" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "allEmployees", "chunks", "code", "documents", "failedDocuments", "name", "roles", "sourceTypes", "status" ]
+      },
+      "WebSourceBody" : {
+        "type" : "object",
+        "properties" : {
+          "urls" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "minItems" : 1
+          },
+          "followLinks" : {
+            "type" : [ "boolean", "null" ]
+          },
+          "maxPages" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "force" : {
+            "type" : [ "boolean", "null" ]
+          }
+        },
+        "required" : [ "urls" ]
+      },
+      "JobAccepted" : {
+        "type" : "object",
+        "properties" : {
+          "jobId" : {
+            "type" : "string"
+          },
+          "documentId" : {
+            "type" : [ "string", "null" ]
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "jobId", "status" ]
+      },
+      "DriveSourceBody" : {
+        "type" : "object",
+        "properties" : {
+          "folderId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "recursive" : {
+            "type" : [ "boolean", "null" ]
+          },
+          "force" : {
+            "type" : [ "boolean", "null" ]
+          }
+        },
+        "required" : [ "folderId" ]
       },
       "WebhookResult" : {
         "type" : "object",
@@ -2305,6 +3022,35 @@
         },
         "required" : [ "createdAt", "id", "postedBy", "title" ]
       },
+      "FeedbackRequest" : {
+        "type" : "object",
+        "properties" : {
+          "rating" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "comment" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "rating" ]
+      },
+      "FeedbackDto" : {
+        "type" : "object",
+        "properties" : {
+          "messageId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "rating" : {
+            "type" : "string"
+          },
+          "comment" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "messageId", "rating" ]
+      },
       "PublishRequest" : {
         "type" : "object",
         "properties" : {
@@ -2326,6 +3072,15 @@
           },
           "status" : {
             "type" : "string"
+          },
+          "reason" : {
+            "type" : [ "string", "null" ]
+          },
+          "message" : {
+            "type" : [ "string", "null" ]
+          },
+          "postUrl" : {
+            "type" : [ "string", "null" ]
           }
         },
         "required" : [ "channel", "status" ]
@@ -2392,9 +3147,15 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "platform" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
           }
         },
-        "required" : [ "caption", "hashtags", "headline", "id", "kind", "suggestedChannels" ]
+        "required" : [ "caption", "hashtags", "headline", "id", "kind", "language", "platform", "suggestedChannels" ]
       },
       "Exchange" : {
         "type" : "object",
@@ -2425,6 +3186,9 @@
             "type" : "string",
             "format" : "date-time"
           },
+          "status" : {
+            "type" : "string"
+          },
           "sources" : {
             "type" : "array",
             "items" : {
@@ -2435,7 +3199,7 @@
             "$ref" : "#/components/schemas/DraftDto"
           }
         },
-        "required" : [ "content", "createdAt", "id", "role", "sources" ]
+        "required" : [ "content", "createdAt", "id", "role", "sources", "status" ]
       },
       "SourceDto" : {
         "type" : "object",
@@ -2445,6 +3209,13 @@
           },
           "collection" : {
             "type" : "string"
+          },
+          "page" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "sourceRef" : {
+            "type" : [ "string", "null" ]
           }
         },
         "required" : [ "collection", "title" ]
@@ -2560,6 +3331,23 @@
           "joinedOn" : {
             "type" : [ "string", "null" ],
             "format" : "date"
+          }
+        }
+      },
+      "DraftPatch" : {
+        "type" : "object",
+        "properties" : {
+          "headline" : {
+            "type" : [ "string", "null" ]
+          },
+          "caption" : {
+            "type" : [ "string", "null" ]
+          },
+          "hashtags" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -2727,6 +3515,100 @@
           }
         },
         "required" : [ "git", "task" ]
+      },
+      "HistoryItem" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "channel" : {
+            "type" : "string"
+          },
+          "channelName" : {
+            "type" : "string"
+          },
+          "headline" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : [ "string", "null" ]
+          },
+          "message" : {
+            "type" : [ "string", "null" ]
+          },
+          "postUrl" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "channel", "channelName", "createdAt", "headline", "id", "status" ]
+      },
+      "HistoryPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/HistoryItem"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "items", "page", "size", "total" ]
+      },
+      "ConnectionDto" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "provider" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "profileUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "canDisconnect" : {
+            "type" : "boolean"
+          },
+          "canReconnect" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "canDisconnect", "canReconnect", "displayName", "id", "provider", "status", "type" ]
       },
       "RepoDto" : {
         "type" : "object",
@@ -3048,6 +3930,142 @@
         },
         "required" : [ "name", "pending", "type", "used" ]
       },
+      "JobFailure" : {
+        "type" : "object",
+        "properties" : {
+          "sourceRef" : {
+            "type" : "string"
+          },
+          "error" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "error", "sourceRef" ]
+      },
+      "KnowledgeJob" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "collection" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "progress" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "error" : {
+            "type" : [ "string", "null" ]
+          },
+          "failures" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/JobFailure"
+            }
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "finishedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "collection", "createdAt", "failures", "id", "kind", "progress", "status" ]
+      },
+      "KnowledgeOverview" : {
+        "type" : "object",
+        "properties" : {
+          "aiServiceAvailable" : {
+            "type" : "boolean"
+          },
+          "collections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CollectionAdmin"
+            }
+          }
+        },
+        "required" : [ "aiServiceAvailable", "collections" ]
+      },
+      "KnowledgeDocument" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "sourceType" : {
+            "type" : "string"
+          },
+          "sourceRef" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "error" : {
+            "type" : [ "string", "null" ]
+          },
+          "chunkCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "chunkCount", "id", "sourceRef", "sourceType", "status", "title", "updatedAt" ]
+      },
+      "ActivityItem" : {
+        "type" : "object",
+        "properties" : {
+          "jobId" : {
+            "type" : "string"
+          },
+          "collection" : {
+            "type" : "string"
+          },
+          "collectionName" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "startedBy" : {
+            "type" : "string"
+          },
+          "startedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "progress" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "error" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "collection", "collectionName", "jobId", "kind", "label", "progress", "startedAt", "startedBy", "status" ]
+      },
       "EmployeePage" : {
         "type" : "object",
         "properties" : {
@@ -3333,9 +4351,15 @@
           },
           "canPublish" : {
             "type" : "boolean"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "accountName" : {
+            "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "canPublish", "code", "connected", "name", "provider", "type" ]
+        "required" : [ "canPublish", "code", "connected", "name", "provider", "status", "type" ]
       },
       "CollectionDto" : {
         "type" : "object",

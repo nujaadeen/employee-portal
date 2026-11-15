@@ -121,5 +121,4 @@ hit rate @3 100 %, @8 100 %, answer latency median 14.7 s, p95 30 s (a 4 GB card
 
 ## Not done in this phase
 
-OCR for scanned PDFs, Drive deletions (a file removed from Drive stays indexed until deleted here), authentication of the
-Gitea-style users inside the AI service (by design: Spring decides), token streaming for social drafts (they are validated first).
+OCR for scanned PDFs, Drive deletions (a file removed from Drive stays indexed until deleted here), user accounts inside the AI service (by design Spring decides who sees what), and token streaming for social drafts (they are validated first).

@@ -52,6 +52,6 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 3. Social connections (LinkedIn)
 - [x] 4. Publishing
 - [x] 5. Config
-- [ ] 6. Tests
-- [ ] 7. Contract and docs
+- [x] 6. Tests (167 passing)
+- [x] 7. Contract and docs
 - [ ] 8. Run it

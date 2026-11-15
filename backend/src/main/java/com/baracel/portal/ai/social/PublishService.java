@@ -8,7 +8,6 @@ import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.common.service.AuditService;
 import com.baracel.portal.common.web.ApiException;
 import com.baracel.portal.common.web.Nullable;
-import com.baracel.portal.common.web.PageResponse;
 import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -32,6 +31,7 @@ public class PublishService {
     private static final Pattern RESERVED = Pattern.compile("([|{}@\\[\\]()<>#\\\\*_~])");   // little text format, reserved characters
 
     public record PublishResult(String channel, String status, @Nullable String reason, @Nullable String message, @Nullable String postUrl) {}
+    public record HistoryPage(List<HistoryItem> items, int page, int size, long total) {}
     public record HistoryItem(Long id, Instant createdAt, String channel, String channelName, String headline, String status,
                               @Nullable String reason, @Nullable String message, @Nullable String postUrl) {}
 
@@ -196,17 +196,18 @@ public class PublishService {
 
     // ---- history ----
 
-    public PageResponse<HistoryItem> history(CurrentUser me, int page, int size) {
+    public HistoryPage history(CurrentUser me, int page, int size) {
         return tx.execute(st -> {
             var rows = log_.findByUserIdOrderByCreatedAtDesc(me.employeeId(), PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100)));
             Map<UUID, AiDraft> byId = drafts.findAllById(rows.stream().map(r -> r.draftId).collect(Collectors.toSet())).stream().collect(Collectors.toMap(x -> x.id, x -> x));
             Map<String, String> names = channels.findAllByOrderByIdAsc().stream().collect(Collectors.toMap(c -> c.code, c -> c.name, (a, b) -> a));
-            return PageResponse.of(rows, r -> {
+            List<HistoryItem> items = rows.getContent().stream().map(r -> {
                 PublishResult pr = result(r.channelCode, r);
                 AiDraft d = byId.get(r.draftId);
                 return new HistoryItem(r.id, r.createdAt, r.channelCode, names.getOrDefault(r.channelCode, r.channelCode), d == null ? "" : d.headline,
                         pr.status(), pr.reason(), pr.message(), pr.postUrl());
-            });
+            }).toList();
+            return new HistoryPage(items, rows.getNumber(), rows.getSize(), rows.getTotalElements());
         });
     }
 }

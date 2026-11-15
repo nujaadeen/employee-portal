@@ -125,3 +125,16 @@ curl -s localhost:8000/readyz
 ```
 The service listens on 127.0.0.1:8000 only; Chroma is not published (use `docker-compose.host-ai.yml` to run the service from source).
 More in `ai-service/README.md` and `docs/ai-service.md`. Tests: `cd ai-service && uv run pytest && uv run ruff check . && uv run mypy ai_service`.
+
+## Spring with the AI service and LinkedIn (prompt 06)
+```bash
+# AI service up (see above), then the backend in http mode. Secrets come from the environment, never from files in git.
+export AI_MODE=http AI_SERVICE_URL=http://localhost:8000
+export PORTAL_BACKEND_AI_CLIENT_SECRET=change-me-backend-ai-secret      # the Keycloak client portal-backend-ai
+export SOCIAL_TOKEN_KEY=$(openssl rand -base64 32)                      # encrypts stored LinkedIn tokens; keep it, or connections must be redone
+cd backend && SPRING_PROFILES_ACTIVE=local mvn -q spring-boot:run
+```
+* `AI_MODE=stub` (default) needs no AI service. `SOCIAL_LINKEDIN_ENABLED=false` (default) makes publishing `SIMULATED`.
+* Real LinkedIn: create an app at https://www.linkedin.com/developers/apps, add the products "Sign In with LinkedIn using OpenID Connect" and "Share on LinkedIn", register `LINKEDIN_REDIRECT_URI` (`http://localhost:8080/api/social/linkedin/callback`), set `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` and `SOCIAL_LINKEDIN_ENABLED=true`. The company page needs LinkedIn's approval for `w_organization_social`; keep `SOCIAL_LINKEDIN_COMPANY_ENABLED=false` until then.
+* Knowledge base: Daniel (ADMIN) can call `/api/knowledge/*`. Collection access is edited with `PUT /api/knowledge/collections/{code}/roles`.
+* `mvn verify` runs 167 tests including WireMock stand-ins for the AI service, Keycloak and LinkedIn (no network needed).

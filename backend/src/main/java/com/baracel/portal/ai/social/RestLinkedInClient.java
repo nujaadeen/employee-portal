@@ -37,8 +37,8 @@ public class RestLinkedInClient implements LinkedInClient {
 
     public RestLinkedInClient(SocialProperties props) {
         this.cfg = props.linkedin();
-        JdkClientHttpRequestFactory f = new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build());
-        f.setReadTimeout(Duration.ofSeconds(15));
+        JdkClientHttpRequestFactory f = new JdkClientHttpRequestFactory(HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(3)).build());
+        f.setReadTimeout(cfg.readTimeout());
         this.http = RestClient.builder().requestFactory(f).build();
     }
 
@@ -71,8 +71,10 @@ public class RestLinkedInClient implements LinkedInClient {
 
     private TokenResponse token(MultiValueMap<String, String> form) {
         try {
+            // The form is encoded here and sent as bytes: Spring logs a form map body (with the client secret) at DEBUG, bytes it does not.
+            byte[] payload = encodeForm(form);
             JsonNode n = http.post().uri(cfg.authBase() + "/oauth/v2/accessToken").contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                    .body(form).retrieve().body(JsonNode.class);
+                    .body(payload).retrieve().body(JsonNode.class);
             if (n == null || !n.hasNonNull("access_token")) throw new LinkedInException(Failure.UNCLEAR, 200, "LinkedIn returned no access token");
             return new TokenResponse(n.get("access_token").asString(), n.path("expires_in").asLong(0), n.path("refresh_token").asString(null),
                     n.hasNonNull("refresh_token_expires_in") ? n.get("refresh_token_expires_in").asLong() : null, n.path("scope").asString(""));
@@ -161,6 +163,12 @@ public class RestLinkedInClient implements LinkedInClient {
         Failure f = s == 401 ? Failure.TOKEN_EXPIRED : s == 429 ? Failure.RATE_LIMITED
                 : (s == 400 || s == 403 || s == 422) ? Failure.REJECTED : s >= 500 ? Failure.UNCLEAR : Failure.UNKNOWN_ERROR;
         return new LinkedInException(f, s, "LinkedIn answered " + s);
+    }
+
+    private static byte[] encodeForm(MultiValueMap<String, String> form) {
+        StringBuilder sb = new StringBuilder();
+        form.forEach((k, vs) -> vs.forEach(v -> sb.append(sb.length() == 0 ? "" : "&").append(enc(k)).append('=').append(enc(v))));
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private static String enc(String v) { return URLEncoder.encode(v, StandardCharsets.UTF_8); }

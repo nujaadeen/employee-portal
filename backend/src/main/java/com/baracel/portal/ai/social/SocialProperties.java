@@ -18,7 +18,8 @@ public record SocialProperties(@DefaultValue LinkedIn linkedin, @DefaultValue Cr
             /** The Linkedin-Version header, YYYYMM. 202511 is retired on 2026-11-16. */
             @DefaultValue("202610") String apiVersion,
             /** Optional: connect this organisation id when the member administers several. */
-            @DefaultValue("") String companyOrganizationId) {}
+            @DefaultValue("") String companyOrganizationId,
+            @DefaultValue("15s") java.time.Duration readTimeout) {}
 
     /** AES-GCM key (base64, 32 bytes) with an id so keys can be rotated. Older keys stay readable. */
     public record Crypto(@DefaultValue("") String tokenKey, @DefaultValue("k1") String tokenKeyId, @DefaultValue("") String oldKeys) {}

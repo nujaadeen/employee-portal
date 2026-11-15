@@ -58,7 +58,7 @@ public class AiServiceClient {
     }
 
     private RestClient restClient(java.time.Duration readTimeout) {
-        JdkClientHttpRequestFactory f = new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(cfg.connectTimeout()).build());
+        JdkClientHttpRequestFactory f = new JdkClientHttpRequestFactory(HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(cfg.connectTimeout()).build());
         f.setReadTimeout(readTimeout);
         return RestClient.builder().baseUrl(cfg.url()).requestFactory(f).build();
     }

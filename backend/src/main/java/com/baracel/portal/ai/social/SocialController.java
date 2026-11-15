@@ -24,7 +24,7 @@ public class SocialController {
     }
 
     @GetMapping("/history")
-    public com.baracel.portal.common.web.PageResponse<PublishService.HistoryItem> history(CurrentUser me, @RequestParam(defaultValue = "0") int page,
+    public PublishService.HistoryPage history(CurrentUser me, @RequestParam(defaultValue = "0") int page,
                                                                                       @RequestParam(defaultValue = "20") int size) {
         return publisher.history(me, page, size);
     }

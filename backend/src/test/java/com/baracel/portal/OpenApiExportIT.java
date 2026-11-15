@@ -21,7 +21,7 @@ class OpenApiExportIT extends IntegrationTest {
     }
 
     /** Request bodies whose every field is optional. The JSON serializer drops an empty required list, so these are the only schemas without one. */
-    private static final java.util.Set<String> ALL_OPTIONAL = java.util.Set.of("BranchRequest", "DecisionRequest", "NewConversation", "UpdateTaskRequest", "SubtaskUpdate", "UpdateEmployee");
+    private static final java.util.Set<String> ALL_OPTIONAL = java.util.Set.of("BranchRequest", "DecisionRequest", "NewConversation", "UpdateTaskRequest", "SubtaskUpdate", "UpdateEmployee", "DraftPatch");
 
     /** Contract rule: an object schema with properties always has a required list, unless every field is optional (listed above). */
     @Test
