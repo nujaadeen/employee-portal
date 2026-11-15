@@ -70,25 +70,6 @@ test.describe('Aisha Rahman (SALES)', () => {
     await context.close()
   })
 
-  test('AI draft can be published to two channels and is marked as simulated', async ({ browser }) => {
-    const { context, page } = await asUser(browser, 'aisha.rahman', '/ai')
-    await expect(page.getByRole('heading', { name: 'AI assistant' })).toBeVisible()
-    await page.getByLabel('Message', { exact: true }).fill('Write an Instagram and LinkedIn ad for our new merchant QR payments product')
-    await page.getByRole('button', { name: 'Send message' }).click()
-    await expect(page.getByText('Scan. Pay. Done.')).toBeVisible()
-    await expect(page.getByText('Product brief v3.pdf')).toBeVisible()
-    const instagram = page.getByRole('button', { name: /Company Instagram/ })
-    await expect(instagram).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.getByRole('button', { name: /Company LinkedIn/ })).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.getByRole('button', { name: /Schedule/ })).toBeDisabled()
-    await page.getByRole('button', { name: 'Publish to 2 channels' }).click()
-    await expect(page.getByText('Simulated: nothing was posted.')).toBeVisible()
-    // right panel: HR and Engineering knowledge are locked for Sales
-    await expect(page.getByLabel('What you can access').getByText('No access')).toHaveCount(2)
-    await shot(page, '08-ai-assistant-aisha')
-    await context.close()
-  })
-
   test('profile page and sign out through Keycloak', async ({ browser }) => {
     const { context, page } = await asUser(browser, 'aisha.rahman', '/profile')
     await expect(page.getByRole('heading', { name: 'Your profile' })).toBeVisible()

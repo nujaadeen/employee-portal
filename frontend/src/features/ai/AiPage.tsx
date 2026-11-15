@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, unwrap } from '@/api/client'
 import type { ChatMessage, PublishResult } from '@/api/types'
+import { usePermissions } from '@/auth/me'
 import { roleName } from '@/lib/format'
 import { Button } from '@/ui/Button'
 import { IconButton } from '@/ui/IconButton'
@@ -15,7 +16,7 @@ import { DraftCard } from './DraftCard'
 import { useDraftEditor } from './draftEditor'
 import { Feedback } from './Feedback'
 import { channelView } from './channelState'
-import { PublishPanel } from './PublishPanel'
+import { CopyOnly, PublishPanel } from './PublishPanel'
 import { useChatStream } from './useChatStream'
 import './ai.css'
 
@@ -23,11 +24,15 @@ const dayKey = (iso: string) => new Date(iso).toDateString()
 
 function DraftBlock({ message, a, onEdit }: { message: ChatMessage; a: AiAccessData; onEdit: () => void }) {
   const editor = useDraftEditor(message.draft!)
+  const { has } = usePermissions()
+  const canPublish = has('social:publish:company') || has('social:publish:personal')   // no publish role: no picker, only the text to copy
   const [results, setResults] = useState<PublishResult[]>([])
   const locked = results.some((r) => r.status === 'PUBLISHED' || r.status === 'SIMULATED' || r.status === 'UNKNOWN')   // the server refuses edits after a publish
   return (<>
     <DraftCard editor={editor} sources={message.sources ?? []} messageKey={message.id} readOnly={locked} />
-    <PublishPanel key={a ? 'ready' : 'wait'} editor={editor} suggested={message.draft!.suggestedChannels ?? []} access={a} onEdit={onEdit} results={results} onResults={setResults} />
+    {canPublish
+      ? <PublishPanel key={a ? 'ready' : 'wait'} editor={editor} suggested={message.draft!.suggestedChannels ?? []} access={a} onEdit={onEdit} results={results} onResults={setResults} />
+      : <CopyOnly text={editor.text} onEdit={onEdit} />}
   </>)
 }
 type AiAccessData = import('@/api/types').AiAccess | undefined
@@ -144,76 +149,6 @@ export function AiPage() {
             )
           })}
           {(a?.channels ?? []).length === 0 ? <li className="muted">No channels</li> : null}
-        </ul>
-      </aside>
-
-      <section className="ai__chat" aria-label="Chat">
-        <header className="ai__head">
-          <div><h1>AI assistant</h1><p className="muted">Answers come from company knowledge you have access to</p></div>
-        </header>
-        <div className="sr-only" role="status" aria-live="polite">{streaming ? 'The assistant is writing an answer.' : st.status === 'stopped' ? 'Generation stopped.' : ''}</div>
-        <div className="ai__thread" role="log" aria-label="Conversation" aria-live="off" aria-busy={streaming}>
-          {!id && st.status === 'idle' ? <EmptyState icon={<Sparkles size={24} />} title="Ask the assistant">Try “Write a LinkedIn post about our autumn campaign”. It only uses knowledge your role allows.</EmptyState> : null}
-          {id && conv.isPending ? <SkeletonRows rows={4} label="Loading conversation" /> : null}
-          {conv.isError ? <p className="note note--danger" role="alert">Could not load this conversation. {conv.error.message}</p> : null}
-          {messages.map((m) => m.role === 'USER' ? <div key={m.id} className="bubble bubble--user">{m.content}</div> : (
-            <div key={m.id} className="ai__reply">
-              <span className="ai__bot" aria-hidden="true">B</span>
-              <div className="grow">
-                <AnswerText text={m.content} sources={m.sources ?? []} messageKey={m.id} />
-                {m.status === 'STOPPED' ? <p><StatusPill tone="warning">Stopped before the end</StatusPill></p> : null}
-                {m.status === 'FAILED' ? <p><StatusPill tone="danger">Answer interrupted</StatusPill></p> : null}
-                {m.draft ? <DraftBlock message={m} a={a} onEdit={() => { setText('Change the tone of this draft: '); inputRef.current?.focus() }} /> : <Sources sources={m.sources ?? []} messageKey={m.id} />}
-                {m.status === 'COMPLETE' ? <Feedback messageId={m.id} /> : lastUser && m === messages[messages.length - 1] ? <Button icon={<RotateCcw size={16} />} onClick={() => void chat.send(lastUser.content)}>Retry</Button> : null}
-              </div>
-            </div>
-          ))}
-          {st.question ? <div className="bubble bubble--user">{st.question}</div> : null}
-          {st.status !== 'idle' && (st.text || streaming) ? (
-            <div className="ai__reply">
-              <span className="ai__bot" aria-hidden="true">B</span>
-              <div className="grow">
-                <AnswerText text={st.text || '…'} sources={st.sources} messageKey="live" />
-                {streaming ? <div className="row"><Button icon={<Square size={14} />} onClick={chat.stop}>Stop generating</Button></div> : null}
-                {st.status === 'stopped' ? <p><StatusPill tone="warning">Stopped. The text so far is kept.</StatusPill></p> : null}
-                {st.sources.length ? <Sources sources={st.sources} messageKey="live" /> : null}
-              </div>
-            </div>
-          ) : null}
-          {st.status === 'error' && st.error ? (
-            <div className={`banner banner--${st.error.kind === 'pending' ? 'warning' : 'danger'}`} role="alert">
-              <CircleAlert size={18} aria-hidden="true" />
-              <div className="grow">
-                <strong>{st.error.kind === 'unavailable' ? 'Assistant unavailable' : st.error.kind === 'rate-limit' ? 'Slow down a little' : st.error.kind === 'pending' ? 'Waiting for approval' : 'The answer could not be completed'}</strong>
-                <p>{st.error.message}{st.text ? ' The part that arrived is kept above.' : ''}</p>
-              </div>
-              {st.error.kind !== 'pending' ? <Button icon={<RotateCcw size={16} />} onClick={chat.retry}>Retry</Button> : null}
-            </div>
-          ) : null}
-          <div ref={end} />
-        </div>
-        <form className="ai__input" onSubmit={(e) => { e.preventDefault(); submit() }}>
-          <input ref={inputRef} aria-label="Message" placeholder={id ? 'Ask for a change, or start a new campaign' : 'Ask the assistant'} value={text} onChange={(e) => setText(e.target.value)} />
-          <IconButton type="submit" label="Send message" disabled={!text.trim() || streaming} className="ai__send"><Send size={20} /></IconButton>
-        </form>
-      </section>
-
-      <aside className="ai__side" aria-label="What you can access">
-        <div className="label-caps">Your role</div>
-        <div className="row" style={{ margin: 'var(--space-3) 0 var(--space-5)', flexWrap: 'wrap' }}>{myRoles.length ? myRoles.map((r) => <StatusPill key={r} tone="info">{roleName(r)}</StatusPill>) : <StatusPill tone="info">Employee</StatusPill>}</div>
-        <div className="label-caps">Knowledge you can search</div>
-        {access.isPending ? <SkeletonRows rows={5} label="Loading access" /> : access.isError ? <p className="note note--danger" role="alert">Could not load your access.</p> : (
-          <ul className="plain-list">
-            {(a?.collections ?? []).map((c) => (
-              <li key={c.code} className="ai__acc">{c.allowed ? <Check size={16} aria-hidden="true" style={{ color: 'var(--success)' }} /> : <Lock size={16} aria-hidden="true" className="muted" />}
-                <span className="grow">{c.name}</span><span className="muted">{c.allowed ? `${c.docCount} docs` : 'No access'}</span></li>
-            ))}
-          </ul>
-        )}
-        <div className="label-caps" style={{ marginTop: 'var(--space-5)' }}>Publishing channels</div>
-        <ul className="plain-list">
-          <li className="ai__acc"><Check size={16} aria-hidden="true" style={{ color: 'var(--success)' }} /><span className="grow">Company accounts ({a?.companyChannels ?? 0})</span><span className="muted">Connected</span></li>
-          <li className="ai__acc">{(a?.personalChannels ?? 0) > 0 ? <Check size={16} aria-hidden="true" style={{ color: 'var(--success)' }} /> : <Lock size={16} aria-hidden="true" className="muted" />}<span className="grow">Personal accounts</span><span className="muted">{(a?.personalChannels ?? 0) > 0 ? `${a?.personalChannels} linked` : 'None linked'}</span></li>
         </ul>
       </aside>
     </div>

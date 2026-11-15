@@ -40,3 +40,28 @@ export function uniqueWorkday(): string {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${base.getFullYear()}-${p(base.getMonth() + 1)}-${p(base.getDate())}`
 }
+
+/** A small valid PDF with the given lines of text on each of `pages` pages (hand written, no library). */
+export function makePdf(lines: string[], pages = 1): Buffer {
+  const objs: string[] = []
+  const pageIds: number[] = []
+  objs.push('')   // 1 catalog, set below
+  objs.push('')   // 2 pages, set below
+  objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>')   // 3
+  for (let p = 0; p < pages; p++) {
+    const text = lines.map((l, i) => `BT /F1 12 Tf 50 ${780 - i * 16} Td (${l.replace(/[()\\]/g, '')} p${p + 1}) Tj ET`).join('\n')
+    const content = objs.length + 2
+    pageIds.push(objs.length + 1)
+    objs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${content} 0 R >>`)
+    objs.push(`<< /Length ${text.length} >>\nstream\n${text}\nendstream`)
+  }
+  objs[0] = '<< /Type /Catalog /Pages 2 0 R >>'
+  objs[1] = `<< /Type /Pages /Kids [${pageIds.map((i) => `${i} 0 R`).join(' ')}] /Count ${pages} >>`
+  let out = '%PDF-1.4\n'
+  const offsets: number[] = []
+  objs.forEach((o, i) => { offsets.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n` })
+  const xref = out.length
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`
+  out += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  return Buffer.from(out, 'latin1')
+}

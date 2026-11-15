@@ -117,3 +117,18 @@ export function PublishPanel({ editor, suggested, access, onEdit, results, onRes
     </section>
   )
 }
+
+/** For people whose role cannot publish: no channel picker, only a way to take the text away. */
+export function CopyOnly({ text, onEdit }: { text: string; onEdit: () => void }) {
+  const toast = useToast()
+  const copy = async () => { try { await navigator.clipboard.writeText(text); toast.success('Post text copied.') } catch { toast.error('Could not copy. Select the text in the draft and copy it yourself.') } }
+  return (
+    <section className="publish" aria-label="Use this draft">
+      <p className="muted">Your role cannot publish to social accounts. Copy the text and post it yourself, or ask for a change.</p>
+      <div className="row" style={{ flexWrap: 'wrap' }}>
+        <Button icon={<Clipboard size={18} />} onClick={() => void copy()}>Copy text</Button>
+        <Button icon={<Pencil size={18} />} onClick={onEdit}>Edit draft</Button>
+      </div>
+    </section>
+  )
+}

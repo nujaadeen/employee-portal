@@ -104,8 +104,14 @@ function DriveTab({ code, onSent }: { code: string; onSent: () => void }) {
   })
   return (
     <form onSubmit={(e) => { e.preventDefault(); setTouched(true); if (!validateDriveFolder(folder)) m.mutate() }} noValidate>
-      <Field label="Folder ID" value={folder} error={error} onChange={(e) => setFolder(e.target.value)}
-        hint={<>Open the folder in Google Drive. The ID is the last part of the address, after <span className="mono">/folders/</span>. You can also paste the whole address. The folder must be shared with the portal&rsquo;s Google service account (ask an administrator for its address).</>} />
+      <Field label="Folder ID" value={folder} error={error} placeholder="1AbCdEfGhIjKlMnOpQrStUv" onChange={(e) => setFolder(e.target.value)} />
+      <details className="drive-help"><summary>Where do I find the folder ID?</summary>
+        <ol>
+          <li><a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener noreferrer">Open Google Drive<span className="sr-only"> (opens in a new tab)</span></a> and open the folder.</li>
+          <li>Look at the address in the browser. The ID is the last part, after <span className="mono">/folders/</span>. You can also paste the whole address here.</li>
+          <li>Share the folder with the portal&rsquo;s Google service account (ask an administrator for its address), so the portal may read it.</li>
+        </ol>
+      </details>
       <label className="check"><input type="checkbox" checked={recursive} onChange={(e) => setRecursive(e.target.checked)} /> Include sub-folders</label>
       <p className="muted">PDFs and Google Docs are indexed. Only files that changed since the last sync are read again.</p>
       {m.error ? <p className="field__error" role="alert">{m.error instanceof ApiError ? m.error.message : 'Could not start the sync.'}</p> : null}

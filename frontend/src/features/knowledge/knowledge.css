@@ -32,3 +32,6 @@
 .check { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; font-size: var(--text-sm); }
 .check input { width: 20px; height: 20px; }
 @media (max-width: 600px) { .kb__big { font-size: 24px; } }
+.drive-help { font-size: var(--text-sm); margin-bottom: var(--space-3); }
+.drive-help summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--link); }
+.drive-help ol { padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }

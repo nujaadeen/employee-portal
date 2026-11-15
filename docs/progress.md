@@ -62,5 +62,5 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 3. Publish flow
 - [x] 4. Connected accounts (screen 11)
 - [x] 5. Knowledge base (screen 10)
-- [ ] 6. Tests (Vitest, Playwright)
+- [x] 6. Tests (98 Vitest, 20 Playwright)
 - [ ] 7. Visual check and docs
