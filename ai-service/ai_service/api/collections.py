@@ -71,8 +71,6 @@ async def upload_pdf(code: Code, file: Annotated[UploadFile, File()], svc: Servi
     name = _safe_name(file.filename)
     async with svc.maker() as s:
         doc = await svc.indexer.get_or_create(s, code, "PDF", name, name)
-        doc.status, doc.error = "PENDING", None
-        await s.commit()
         path = upload_path(svc.settings, code, doc.id)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(bytes(data))

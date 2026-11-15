@@ -77,23 +77,30 @@ class JobWorker:
             async with lock:
                 job.status, job.progress = "RUNNING", 0
                 await s.commit()
+                status, error = "DONE", None
+                failures: list[dict[str, str]] = []
                 try:
-                    failures = await self._dispatch(s, job)
-                    job.failures = failures
-                    job.status = "DONE" if not failures else ("FAILED" if job.progress == -1 else "PARTIAL")
+                    failures, total = await self._dispatch(s, job)
+                    if failures:
+                        status = "FAILED" if len(failures) >= total else "PARTIAL"
                 except ExtractionError as exc:
-                    job.status, job.error = "FAILED", str(exc)
+                    status, error = "FAILED", str(exc)
                 except Exception as exc:
                     log.exception("job %s failed", job_id)
-                    await s.rollback()
-                    job = await s.get(IngestJob, job_id) or job
-                    job.status, job.error = "FAILED", f"{type(exc).__name__}"
+                    status, error = "FAILED", type(exc).__name__
+                await s.rollback()
+                job = await s.get(IngestJob, job_id, populate_existing=True) or job  # a rollback in a runner expired it
+                job.status, job.error, job.failures = (
+                    status,
+                    error or (failures[0]["error"] if failures and status == "FAILED" else None),
+                    failures,
+                )
                 job.progress = 100
                 job.finished_at = datetime.now(UTC)
                 await s.commit()
                 log.info("job %s finished: kind=%s status=%s failures=%d", job_id, job.kind, job.status, len(job.failures))
 
-    async def _dispatch(self, s: AsyncSession, job: IngestJob) -> list[dict[str, str]]:
+    async def _dispatch(self, s: AsyncSession, job: IngestJob) -> tuple[list[dict[str, str]], int]:
         match job.kind:
             case "PDF":
                 return await self._pdf(s, job)
@@ -110,38 +117,40 @@ class JobWorker:
         await s.commit()
 
     async def _fail(self, s: AsyncSession, doc: Document, exc: Exception) -> dict[str, str]:
+        doc_id, source_ref = doc.id, doc.source_ref  # read before the rollback expires the objects
         await s.rollback()
-        doc = await s.get(Document, doc.id) or doc
-        doc.status, doc.error = "FAILED", str(exc)[:500] if isinstance(exc, ExtractionError) else type(exc).__name__
-        await s.commit()
-        return {"source_ref": doc.source_ref, "error": doc.error}
+        error = str(exc)[:500] if isinstance(exc, ExtractionError) else type(exc).__name__
+        fresh = await s.get(Document, doc_id)
+        if fresh is not None:
+            fresh.status, fresh.error = "FAILED", error
+            await s.commit()
+        return {"source_ref": source_ref, "error": error}
 
-    async def _pdf(self, s: AsyncSession, job: IngestJob) -> list[dict[str, str]]:
-        doc = await s.get(Document, job.payload["document_id"])
+    async def _pdf(self, s: AsyncSession, job: IngestJob) -> tuple[list[dict[str, str]], int]:
+        payload = dict(job.payload)
+        doc = await s.get(Document, payload["document_id"])
         if doc is None:
             raise ExtractionError("The document was deleted before it was indexed")
         try:
             title, pages = extract_pdf(upload_path(self._s, doc.collection, doc.id).read_bytes())
-            await self._indexer.index(s, doc, pages, title=doc.title or title, force=bool(job.payload.get("force")))
+            await self._indexer.index(s, doc, pages, title=doc.title or title, force=bool(payload.get("force")))
         except Exception as exc:
             failure = await self._fail(s, doc, exc)
-            job.error = failure["error"]
-            return [failure]
-        return []
+            return [failure], 1
+        return [], 1
 
-    async def _drive_sync(self, s: AsyncSession, job: IngestJob) -> list[dict[str, str]]:
-        files = await self._drive.list_files(job.payload["folder_id"], bool(job.payload.get("recursive", True)))
+    async def _drive_sync(self, s: AsyncSession, job: IngestJob) -> tuple[list[dict[str, str]], int]:
+        payload, collection = dict(job.payload), job.collection
+        files = await self._drive.list_files(payload["folder_id"], bool(payload.get("recursive", True)))
         failures: list[dict[str, str]] = []
         for i, f in enumerate(files):
-            doc = await self._indexer.get_or_create(s, job.collection, "DRIVE", f.id, f.name)
-            if not job.payload.get("force") and doc.status == "READY" and doc.remote_modified == f.modified_time:
+            doc = await self._indexer.get_or_create(s, collection, "DRIVE", f.id, f.name)
+            if not payload.get("force") and doc.status == "READY" and doc.remote_modified == f.modified_time:
                 await self._progress(s, job, i + 1, len(files))
                 continue  # incremental: unchanged since the last sync
-            failures += await self._index_drive_file(s, doc, f, bool(job.payload.get("force")))
+            failures += await self._index_drive_file(s, doc, f, bool(payload.get("force")))
             await self._progress(s, job, i + 1, len(files))
-        if files and len(failures) == len(files):
-            job.progress = -1
-        return failures
+        return failures, len(files)
 
     async def _index_drive_file(self, s: AsyncSession, doc: Document, f: DriveFile, force: bool) -> list[dict[str, str]]:
         try:
@@ -155,20 +164,21 @@ class JobWorker:
         except Exception as exc:
             return [await self._fail(s, doc, exc)]
 
-    async def _web_sync(self, s: AsyncSession, job: IngestJob) -> list[dict[str, str]]:
-        urls = validate_urls(list(job.payload["urls"]))
-        limit = min(int(job.payload.get("max_pages") or self._s.web_page_limit), self._s.web_page_limit)
-        follow = bool(job.payload.get("follow_links"))
+    async def _web_sync(self, s: AsyncSession, job: IngestJob) -> tuple[list[dict[str, str]], int]:
+        payload, collection = dict(job.payload), job.collection
+        urls = validate_urls(list(payload["urls"]))
+        limit = min(int(payload.get("max_pages") or self._s.web_page_limit), self._s.web_page_limit)
+        follow = bool(payload.get("follow_links"))
         queue, seen, failures, done = list(urls), set(urls), [], 0
         while queue and done < limit:
             url = queue.pop(0)
-            doc = await self._indexer.get_or_create(s, job.collection, "WEB", url, url)
+            doc = await self._indexer.get_or_create(s, collection, "WEB", url, url)
             try:
                 if not await self._web.allowed(url):
                     raise ExtractionError("Blocked by robots.txt")
                 page = await self._web.fetch(url)
                 title, pages = extract_html(page.html)
-                await self._indexer.index(s, doc, pages, title=title or url, force=bool(job.payload.get("force")))
+                await self._indexer.index(s, doc, pages, title=title or url, force=bool(payload.get("force")))
                 if follow:
                     for link in same_domain_links(page):
                         if link not in seen and len(seen) < limit * 3:
@@ -178,12 +188,11 @@ class JobWorker:
                 failures.append(await self._fail(s, doc, exc))
             done += 1
             await self._progress(s, job, done, min(limit, max(len(queue) + done, 1)))
-        if done and len(failures) == done:
-            job.progress = -1
-        return failures
+        return failures, done
 
-    async def _reindex(self, s: AsyncSession, job: IngestJob) -> list[dict[str, str]]:
-        docs = list((await s.execute(select(Document).where(Document.collection == job.collection))).scalars())
+    async def _reindex(self, s: AsyncSession, job: IngestJob) -> tuple[list[dict[str, str]], int]:
+        collection = job.collection
+        docs = list((await s.execute(select(Document).where(Document.collection == collection))).scalars())
         failures: list[dict[str, str]] = []
         for i, doc in enumerate(docs):
             try:
@@ -200,9 +209,7 @@ class JobWorker:
             except Exception as exc:
                 failures.append(await self._fail(s, doc, exc))
             await self._progress(s, job, i + 1, len(docs))
-        if docs and len(failures) == len(docs):
-            job.progress = -1
-        return failures
+        return failures, len(docs)
 
 
 def job_dict(job: IngestJob) -> dict[str, Any]:

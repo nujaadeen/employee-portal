@@ -50,7 +50,7 @@ class Indexer:
         if doc is None:
             doc = Document(collection=collection, source_type=source_type, source_ref=source_ref, title=title)
             session.add(doc)
-            await session.flush()
+            await session.commit()  # committed now so a later failure can still be recorded on it
         return doc
 
     async def index(

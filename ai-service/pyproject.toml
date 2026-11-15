@@ -8,7 +8,7 @@ dependencies = [
   "uvicorn[standard]>=0.32",
   "pydantic>=2.9",
   "pydantic-settings>=2.6",
-  "sqlalchemy>=2.0.36",
+  "sqlalchemy[asyncio]>=2.0.36",
   "alembic>=1.14",
   "psycopg[binary]>=3.2",
   "httpx>=0.27",
@@ -61,11 +61,13 @@ strict = true
 plugins = ["pydantic.mypy"]
 exclude = ["alembic/"]
 [[tool.mypy.overrides]]
-module = ["chromadb.*", "authlib.*", "trafilatura.*", "langdetect.*", "googleapiclient.*", "google.*", "fitz.*", "sentence_transformers.*", "reportlab.*", "torch.*"]
+module = ["chromadb.*", "authlib.*", "trafilatura.*", "langdetect.*", "googleapiclient.*", "google.*", "fitz.*", "pymupdf.*", "sentence_transformers.*", "reportlab.*", "torch.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["ignore::DeprecationWarning:authlib.*", "ignore::authlib.deprecate.AuthlibDeprecationWarning"]
 testpaths = ["tests"]
 addopts = "-q"
 

@@ -1,6 +1,6 @@
 """Text extraction from PDFs (PyMuPDF, per page) and web pages (trafilatura)."""
 
-import fitz  # PyMuPDF
+import pymupdf
 import trafilatura
 
 from ai_service.rag.chunking import Page
@@ -18,16 +18,19 @@ def extract_pdf(data: bytes) -> tuple[str, list[Page]]:
     if not data.startswith(PDF_MAGIC):
         raise ExtractionError("Not a PDF file")
     try:
-        doc = fitz.open(stream=data, filetype="pdf")
+        doc = pymupdf.open(stream=data, filetype="pdf")  # type: ignore[no-untyped-call]
     except Exception as exc:
         raise ExtractionError("The PDF could not be opened") from exc
     try:
         if doc.needs_pass:
             raise ExtractionError("The PDF is password protected")
         title = (doc.metadata or {}).get("title") or ""
-        pages = [Page(i + 1, clean_text(p.get_text("text"))) for i, p in enumerate(doc)]
+        pages = [
+            Page(i + 1, clean_text(str(doc[i].get_text("text"))))  # type: ignore[no-untyped-call]
+            for i in range(doc.page_count)
+        ]
     finally:
-        doc.close()
+        doc.close()  # type: ignore[no-untyped-call]
     pages = [p for p in pages if p.text]
     if not pages:
         raise ExtractionError("The PDF has no extractable text")

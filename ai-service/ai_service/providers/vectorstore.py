@@ -6,6 +6,7 @@ from typing import Any, Protocol
 from urllib.parse import urlparse
 
 import chromadb
+from chromadb.config import Settings as ChromaSettings
 
 
 @dataclass(frozen=True)
@@ -43,7 +44,11 @@ class ChromaVectorStore:
 
     @classmethod
     def ephemeral(cls) -> "ChromaVectorStore":
-        return cls(chromadb.EphemeralClient())
+        return cls(chromadb.EphemeralClient(settings=ChromaSettings(allow_reset=True, anonymized_telemetry=False)))
+
+    def reset(self) -> None:
+        """Tests only (needs an ephemeral client)."""
+        self._client.reset()
 
     def _col(self, code: str) -> Any:
         return self._client.get_or_create_collection(name=code, metadata={"hnsw:space": "cosine"})
