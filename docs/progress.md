@@ -48,7 +48,7 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 
 ## Prompt 06 (Spring: AI service, knowledge base, LinkedIn)
 - [x] 1. AI client (HttpAiAssistantClient, SSE relay, resilience, rate limit, feedback, draft edit)
-- [ ] 2. Knowledge base admin
+- [x] 2. Knowledge base admin
 - [ ] 3. Social connections (LinkedIn)
 - [ ] 4. Publishing
 - [ ] 5. Config

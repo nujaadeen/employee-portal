@@ -173,6 +173,58 @@ public class AccessService {
         return matrix(role);
     }
 
+    // ---- permissions that belong to other modules (the AI collections) ----
+
+    /** Adds a permission row, for example ai:knowledge:<code> when a collection is created. Nothing happens when it exists. */
+    @Transactional
+    public void registerPermission(String module, String action, String label, String hint, String group, String row, String column) {
+        if (permissions.findAll().stream().anyMatch(p -> p.module.equals(module) && p.action.equals(action))) return;
+        Permission p = new Permission();
+        p.module = module;
+        p.action = action;
+        p.label = label;
+        p.hint = hint;
+        p.uiGroup = group;
+        p.uiRow = row;
+        p.uiColumn = column;
+        p.sortOrder = permissions.findAll().stream().filter(x -> group.equals(x.uiGroup)).mapToInt(x -> x.sortOrder).max().orElse(100) + 1;
+        permissions.save(p);
+        clearCache();
+    }
+
+    @Transactional
+    public void removePermission(String key) {
+        permissions.findAll().stream().filter(p -> p.key().equals(key)).findFirst().ifPresent(p -> {
+            rolePermissions.deleteAllByPermissionId(p.id);
+            permissions.delete(p);
+            clearCache();
+        });
+    }
+
+    /** Roles that hold a permission, built-in roles first. */
+    @Transactional(readOnly = true)
+    public List<String> rolesWithPermission(String key) {
+        Long id = permissions.findAll().stream().filter(p -> p.key().equals(key)).map(p -> p.id).findFirst().orElse(null);
+        if (id == null) return List.of();
+        Set<String> holders = rolePermissions.findByPermissionId(id).stream().map(rp -> rp.roleName).collect(Collectors.toSet());
+        List<String> out = new ArrayList<>(PortalRoles.ALL.stream().filter(holders::contains).toList());
+        holders.stream().filter(r -> !PortalRoles.ALL.contains(r)).sorted().forEach(out::add);
+        return out;
+    }
+
+    /** Replaces the roles that hold a permission. Unknown roles are refused. Clears the permission cache. */
+    @Transactional
+    public void setRolesForPermission(String key, Collection<String> roles) {
+        for (String r : roles) requireRole(r);
+        Permission p = permissions.findAll().stream().filter(x -> x.key().equals(key)).findFirst()
+                .orElseThrow(() -> ApiException.notFound("Unknown permission: " + key));
+        rolePermissions.deleteAllByPermissionId(p.id);
+        rolePermissions.flush();
+        for (String r : new LinkedHashSet<>(roles)) rolePermissions.save(new RolePermission(r, p.id));
+        rolePermissions.flush();
+        clearCache();
+    }
+
     private void requireRole(String role) {
         if (!PortalRoles.ALL.contains(role) && !customRoles.existsById(role)) throw ApiException.notFound("Unknown role: " + role);
     }

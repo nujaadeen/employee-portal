@@ -8,6 +8,10 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface RolePermissionRepository extends JpaRepository<RolePermission, Long> {
     List<RolePermission> findByRoleName(String roleName);
+    List<RolePermission> findByPermissionId(Long permissionId);
+    @Modifying
+    @Query("delete from RolePermission rp where rp.permissionId = :id")
+    void deleteAllByPermissionId(Long id);
 
     @Modifying
     @Query("delete from RolePermission rp where rp.roleName = :role")
