@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class AiIT extends IntegrationTest {
     static final String AISHA_DRAFT = "f0000000-0000-4000-8000-000000000001";
     @Autowired AiService ai;
+    @Autowired com.baracel.portal.ai.social.PublishService publisher;
     @Autowired JdbcTemplate jdbc;
 
     String conversation(String user) throws Exception {
@@ -89,7 +90,9 @@ class AiIT extends IntegrationTest {
                 .andExpect(jsonPath("$.collections[?(@.code=='hr-policies')].allowed").value(false))
                 .andExpect(jsonPath("$.collections[?(@.code=='engineering')].allowed").value(false))
                 .andExpect(jsonPath("$.collections[?(@.code=='product')].docCount").value(214))
-                .andExpect(jsonPath("$.companyChannels").value(3))
+                .andExpect(jsonPath("$.companyChannels").value(1))   // only LinkedIn can be used; Instagram and Facebook are coming later
+                .andExpect(jsonPath("$.channels[?(@.code=='company-instagram')].status").value("COMING_LATER"))
+                .andExpect(jsonPath("$.channels[?(@.code=='company-facebook')].canPublish").value(false))
                 .andExpect(jsonPath("$.personalChannels").value(1))
                 .andExpect(jsonPath("$.channels[?(@.code=='personal-linkedin-aisha')].canPublish").value(true));
         // Priya sees the company channels but cannot publish to them, and does not see Aisha's personal account
@@ -102,15 +105,17 @@ class AiIT extends IntegrationTest {
 
     @Test
     void publishingIsSimulatedAndLoggedWithTheUser() throws Exception {
-        mvc.perform(postAs("aisha.rahman", "/api/ai/drafts/" + AISHA_DRAFT + "/publish", "{\"channels\":[\"company-instagram\",\"company-linkedin\"]}"))
+        mvc.perform(postAs("aisha.rahman", "/api/ai/drafts/" + AISHA_DRAFT + "/publish", "{\"channels\":[\"company-linkedin\",\"personal-linkedin-aisha\"]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].status", everyItem(is("SIMULATED"))))
-                .andExpect(jsonPath("$[*].channel", contains("company-instagram", "company-linkedin")));
+                .andExpect(jsonPath("$[*].channel", contains("company-linkedin", "personal-linkedin-aisha")));
         List<String> rows = jdbc.queryForList("select user_name || ':' || channel_code || ':' || status from publish_log order by id", String.class);
-        org.junit.jupiter.api.Assertions.assertEquals(List.of("Aisha Rahman:company-instagram:SIMULATED", "Aisha Rahman:company-linkedin:SIMULATED"), rows);
+        org.junit.jupiter.api.Assertions.assertEquals(List.of("Aisha Rahman:company-linkedin:SIMULATED", "Aisha Rahman:personal-linkedin-aisha:SIMULATED"), rows);
         org.junit.jupiter.api.Assertions.assertEquals(TestUsers.id("aisha.rahman").toString(),
                 jdbc.queryForObject("select distinct user_id::text from publish_log", String.class));
+        // publishing again returns the first result and writes nothing new
         mvc.perform(postAs("aisha.rahman", "/api/ai/drafts/" + AISHA_DRAFT + "/publish", "{\"channels\":[\"personal-linkedin-aisha\"]}")).andExpect(status().isOk());
+        org.junit.jupiter.api.Assertions.assertEquals(2, jdbc.queryForObject("select count(*) from publish_log", Integer.class));
     }
 
     @Test
@@ -118,8 +123,8 @@ class AiIT extends IntegrationTest {
         mvc.perform(postAs("aisha.rahman", "/api/ai/drafts/" + AISHA_DRAFT + "/publish", "{\"channels\":[]}")).andExpect(status().isBadRequest());
         mvc.perform(postAs("aisha.rahman", "/api/ai/drafts/" + AISHA_DRAFT + "/publish", "{\"channels\":[\"company-tiktok\"]}")).andExpect(status().isBadRequest());
         // someone else's draft is invisible
-        mvc.perform(postAs("omar.haddad", "/api/ai/drafts/" + AISHA_DRAFT + "/publish", "{\"channels\":[\"company-instagram\"]}")).andExpect(status().isNotFound());
-        mvc.perform(postAs("aisha.rahman", "/api/ai/drafts/00000000-0000-0000-0000-000000000000/publish", "{\"channels\":[\"company-instagram\"]}"))
+        mvc.perform(postAs("omar.haddad", "/api/ai/drafts/" + AISHA_DRAFT + "/publish", "{\"channels\":[\"company-linkedin\"]}")).andExpect(status().isNotFound());
+        mvc.perform(postAs("aisha.rahman", "/api/ai/drafts/00000000-0000-0000-0000-000000000000/publish", "{\"channels\":[\"company-linkedin\"]}"))
                 .andExpect(status().isNotFound());
         org.junit.jupiter.api.Assertions.assertEquals(0, jdbc.queryForObject("select count(*) from publish_log", Integer.class));
     }
@@ -129,18 +134,18 @@ class AiIT extends IntegrationTest {
         CurrentUser aisha = new CurrentUser(TestUsers.id("aisha.rahman"), TestUsers.id("aisha.rahman").toString(), "Aisha Rahman",
                 "aisha.rahman@baracel.example", "ACTIVE", Set.of("EMPLOYEE", "SALES"), Set.of("ai:chat"));
         java.util.UUID draft = java.util.UUID.fromString(AISHA_DRAFT);
-        ApiException e1 = org.junit.jupiter.api.Assertions.assertThrows(ApiException.class, () -> ai.publish(aisha, draft, List.of("company-instagram")));
+        ApiException e1 = org.junit.jupiter.api.Assertions.assertThrows(ApiException.class, () -> publisher.publish(aisha, draft, List.of("company-linkedin")));
         org.junit.jupiter.api.Assertions.assertEquals(403, e1.status().value());
         // company permission alone does not allow a personal channel, and personal alone does not allow a company channel
         CurrentUser companyOnly = new CurrentUser(aisha.employeeId(), aisha.keycloakId(), aisha.name(), aisha.email(), "ACTIVE", aisha.roles(),
                 Set.of("ai:chat", "social:publish:company"));
         org.junit.jupiter.api.Assertions.assertEquals(403, org.junit.jupiter.api.Assertions.assertThrows(ApiException.class,
-                () -> ai.publish(companyOnly, draft, List.of("personal-linkedin-aisha"))).status().value());
+                () -> publisher.publish(companyOnly, draft, List.of("personal-linkedin-aisha"))).status().value());
         CurrentUser personalOnly = new CurrentUser(aisha.employeeId(), aisha.keycloakId(), aisha.name(), aisha.email(), "ACTIVE", aisha.roles(),
                 Set.of("ai:chat", "social:publish:personal"));
         org.junit.jupiter.api.Assertions.assertEquals(403, org.junit.jupiter.api.Assertions.assertThrows(ApiException.class,
-                () -> ai.publish(personalOnly, draft, List.of("company-facebook"))).status().value());
-        org.junit.jupiter.api.Assertions.assertEquals(1, ai.publish(personalOnly, draft, List.of("personal-linkedin-aisha")).size());
+                () -> publisher.publish(personalOnly, draft, List.of("company-linkedin"))).status().value());
+        org.junit.jupiter.api.Assertions.assertEquals(1, publisher.publish(personalOnly, draft, List.of("personal-linkedin-aisha")).size());
         org.junit.jupiter.api.Assertions.assertEquals(0, jdbc.queryForObject("select count(*) from publish_log where channel_code like 'company%'", Integer.class));
     }
 

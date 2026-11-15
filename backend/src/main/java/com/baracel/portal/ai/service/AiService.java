@@ -4,6 +4,7 @@ import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.ai.domain.*;
 import com.baracel.portal.ai.repo.*;
 import com.baracel.portal.ai.service.AiAssistantPort.*;
+import com.baracel.portal.ai.social.ChannelService;
 import com.baracel.portal.common.security.CurrentUser;
 import com.baracel.portal.common.service.AuditService;
 import com.baracel.portal.common.web.ApiException;
@@ -24,10 +25,8 @@ public class AiService {
     public record ConversationDetail(UUID id, String title, List<MessageDto> messages) {}
     public record Exchange(MessageDto userMessage, MessageDto assistantMessage) {}
     public record CollectionDto(String code, String name, int docCount, boolean allowed) {}
-    public record ChannelDto(String code, String name, String type, String provider, boolean connected, boolean canPublish) {}
-    public record AiAccess(List<String> roles, List<CollectionDto> collections, List<ChannelDto> channels, int companyChannels,
+        public record AiAccess(List<String> roles, List<CollectionDto> collections, List<ChannelService.ChannelDto> channels, int companyChannels,
                            int personalChannels) {}
-    public record PublishResult(String channel, String status) {}
     public record FeedbackDto(UUID messageId, String rating, @Nullable String comment) {}
     /** What a chat call needs between saving the question and saving the answer. */
     public record PreparedChat(UUID conversationId, AiRequest request, MessageDto userMessage, boolean firstMessage, String text) {}
@@ -39,6 +38,7 @@ public class AiService {
     private final KnowledgeCollectionRepository collections;
     private final SocialChannelRepository channels;
     private final PublishLogRepository publishLog;
+    private final ChannelService channelService;
     private final AiAssistantPort assistant;
     private final AuditService audit;
     private final AiFeedbackRepository feedback;
@@ -48,7 +48,7 @@ public class AiService {
     public AiService(AiConversationRepository conversations, AiMessageRepository messages, AiMessageSourceRepository sources,
                      AiDraftRepository drafts, KnowledgeCollectionRepository collections, SocialChannelRepository channels,
                      PublishLogRepository publishLog, AiAssistantPort assistant, AuditService audit, AiFeedbackRepository feedback,
-                     ChatRateLimiter rateLimiter, TransactionTemplate tx) {
+                     ChatRateLimiter rateLimiter, TransactionTemplate tx, ChannelService channelService) {
         this.conversations = conversations;
         this.messages = messages;
         this.sources = sources;
@@ -61,6 +61,7 @@ public class AiService {
         this.feedback = feedback;
         this.rateLimiter = rateLimiter;
         this.tx = tx;
+        this.channelService = channelService;
     }
 
     /** Computed only here, from the caller's permissions. The assistant never decides access. */
@@ -227,54 +228,17 @@ public class AiService {
     private static String tag(String h) { return h.startsWith("#") ? h : "#" + h; }
     private static String trunc(String v, int max) { return v == null ? null : (v.length() > max ? v.substring(0, max) : v); }
 
-    @Transactional(readOnly = true)
     public AiAccess access(CurrentUser me) {
         List<String> allowed = allowedCollections(me);
         List<CollectionDto> cols = collections.findAllByOrderBySortOrderAsc().stream()
                 .map(c -> new CollectionDto(c.code, c.name, c.docCount, allowed.contains(c.code))).toList();
-        List<ChannelDto> chans = channels.findAllByOrderByIdAsc().stream()
-                .filter(c -> "COMPANY".equals(c.type) || me.employeeId().equals(c.ownerId))
-                .map(c -> new ChannelDto(c.code, c.name, c.type, c.provider, c.connected, canPublish(me, c))).toList();
+        List<ChannelService.ChannelDto> chans = channelService.forUser(me);
         return new AiAccess(me.roles().stream().sorted().toList(), cols, chans,
                 (int) chans.stream().filter(c -> "COMPANY".equals(c.type()) && c.connected()).count(),
                 (int) chans.stream().filter(c -> "PERSONAL".equals(c.type()) && c.connected()).count());
     }
 
-    /** Needs social:publish:company or social:publish:personal depending on the channel. Phase 1 only logs (SIMULATED). */
-    @Transactional
-    public List<PublishResult> publish(CurrentUser me, UUID draftId, List<String> channelCodes) {
-        AiDraft d = drafts.findById(draftId).orElseThrow(() -> ApiException.notFound("Draft not found"));
-        AiMessage m = messages.findById(d.messageId).orElseThrow();
-        owned(me, m.conversationId);
-        if (channelCodes == null || channelCodes.isEmpty()) throw ApiException.badRequest("validation", "Pick at least one channel.");
-        Map<String, SocialChannel> byCode = channels.findByCodeIn(channelCodes).stream().collect(Collectors.toMap(c -> c.code, c -> c));
-        for (String code : channelCodes) {
-            SocialChannel c = byCode.get(code);
-            if (c == null) throw ApiException.badRequest("unknown-channel", "Unknown channel: " + code);
-            if (!canPublish(me, c)) throw ApiException.forbidden("You cannot publish to " + c.name + ".");
-            if (!c.connected) throw ApiException.conflict("channel-not-connected", c.name + " is not connected.");
-        }
-        List<PublishResult> out = new ArrayList<>();
-        for (String code : new LinkedHashSet<>(channelCodes)) {
-            PublishLog log = new PublishLog();
-            log.draftId = d.id;
-            log.channelCode = code;
-            log.userId = me.employeeId();
-            log.userName = me.name();
-            log.status = "SIMULATED";
-            publishLog.save(log);
-            out.add(new PublishResult(code, "SIMULATED"));
-        }
-        audit.log(me, "AI_DRAFT_PUBLISHED", "ai-draft", d.id.toString(), "channels=" + channelCodes + " (simulated)");
-        return out;
-    }
-
     // ---- helpers ----
-
-    private boolean canPublish(CurrentUser me, SocialChannel c) {
-        if ("COMPANY".equals(c.type)) return me.has("social:publish:company");
-        return me.has("social:publish:personal") && me.employeeId().equals(c.ownerId);
-    }
 
     private AiConversation owned(CurrentUser me, UUID id) {
         return conversations.findById(id).filter(c -> c.ownerId.equals(me.employeeId()))

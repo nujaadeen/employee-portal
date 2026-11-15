@@ -16,8 +16,18 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Social accounts")
 public class SocialController {
     private final SocialConnectionService service;
+    private final PublishService publisher;
 
-    public SocialController(SocialConnectionService service) { this.service = service; }
+    public SocialController(SocialConnectionService service, PublishService publisher) {
+        this.service = service;
+        this.publisher = publisher;
+    }
+
+    @GetMapping("/history")
+    public com.baracel.portal.common.web.PageResponse<PublishService.HistoryItem> history(CurrentUser me, @RequestParam(defaultValue = "0") int page,
+                                                                                      @RequestParam(defaultValue = "20") int size) {
+        return publisher.history(me, page, size);
+    }
 
     @GetMapping("/connections")
     public List<ConnectionDto> connections(CurrentUser me) { return service.list(me); }

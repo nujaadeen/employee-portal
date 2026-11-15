@@ -4,6 +4,8 @@ import com.baracel.portal.common.web.Nullable;
 import com.baracel.portal.ai.service.AiChatStreamService;
 import com.baracel.portal.ai.service.AiService;
 import com.baracel.portal.ai.service.AiService.*;
+import com.baracel.portal.ai.social.PublishService;
+import com.baracel.portal.ai.social.PublishService.PublishResult;
 import com.baracel.portal.common.security.CurrentUser;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,8 +35,10 @@ public class AiController {
 
     private final AiService service;
     private final AiChatStreamService streams;
+    private final PublishService publisher;
 
-    public AiController(AiService service, AiChatStreamService streams) {
+    public AiController(AiService service, AiChatStreamService streams, PublishService publisher) {
+        this.publisher = publisher;
         this.service = service;
         this.streams = streams;
     }
@@ -79,6 +83,6 @@ public class AiController {
 
     @PostMapping("/drafts/{id}/publish")
     public List<PublishResult> publish(CurrentUser me, @PathVariable UUID id, @Valid @RequestBody PublishRequest body) {
-        return service.publish(me, id, body.channels());
+        return publisher.publish(me, id, body.channels());
     }
 }
