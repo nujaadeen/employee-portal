@@ -14,7 +14,9 @@ mkdirSync(out, { recursive: true })
 const PORTAL = 'http://portal.baracel.local'
 const PASSWORD = 'ChangeMe123!'   // documented dev password of the demo users
 
-const browser = await chromium.launch({ args: ['--host-resolver-rules=MAP *.baracel.local 127.0.0.1'] })
+// A browser only gives pages the Web Crypto API (crypto.subtle, needed for the PKCE login) on https or localhost. http://portal.baracel.local is
+// neither, so this test browser is told to treat that one origin as secure. A person's browser needs the same (docs/kind.md, Troubleshooting).
+const browser = await chromium.launch({ channel: 'chromium', args: ['--host-resolver-rules=MAP *.baracel.local 127.0.0.1', '--unsafely-treat-insecure-origin-as-secure=http://portal.baracel.local'] })
 
 async function signIn(username, shotName) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
@@ -54,11 +56,16 @@ async function shot(page, name) {
 {
   const { ctx, page } = await signIn('aisha.rahman')
   await page.goto(PORTAL + '/ai')
-  await page.getByRole('textbox', { name: 'Message' }).fill('How do I pair the Lantern Pro with my phone?')
+  await page.getByRole('textbox', { name: 'Message' }).fill('Explain how to pair the Lantern Pro with my phone, how long the battery lasts and what the warranty covers.')
   await page.getByRole('button', { name: 'Send message' }).click()
-  await page.getByRole('button', { name: 'Stop generating' }).waitFor({ timeout: 120000 })   // visible only while the stream is running
-  await page.locator('.ai__thread .answer').last().filter({ hasText: /\S{3,}/ }).waitFor({ timeout: 120000 })
-  await shot(page, '03-ai-chat-streaming.png')
+  // take the picture while the stream is running: the Stop button is there and some text has arrived
+  const stop = page.getByRole('button', { name: 'Stop generating' })
+  await stop.waitFor({ timeout: 120000 })
+  await page.waitForFunction(() => (Array.from(document.querySelectorAll('.ai__thread .answer')).pop()?.textContent ?? '').length > 25, null, { timeout: 120000 })
+  const streaming = await stop.isVisible()
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.screenshot({ path: path.join(out, '03-ai-chat-streaming.png') })
+  console.log('saved docs/kind/03-ai-chat-streaming.png (stream still running: ' + streaming + ')')
   await page.getByRole('button', { name: 'Stop generating' }).waitFor({ state: 'detached', timeout: 180000 })
   await shot(page, '03b-ai-chat-answered.png')
   await ctx.close()

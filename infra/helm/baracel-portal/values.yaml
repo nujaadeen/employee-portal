@@ -1,0 +1,139 @@
+# Baracel Employee Portal: default values.
+# Secrets are NEVER set here. The chart only references Kubernetes Secrets that already exist (see `existingSecrets`).
+# For a local kind cluster use values-kind.yaml (scripts/kind-up.sh with KIND_DEPLOY=helm does it for you).
+
+nameOverride: ""
+fullnameOverride: ""
+# Prefix of every resource name. Unset: "<fullname>-". Set to "" for bare names (portal-backend, keycloak ...), set to "x-" for "x-portal-backend".
+# resourcePrefix: ""
+
+global:
+  # Public host names (the ingress hosts) and the scheme the browser uses. The issuer is <scheme>://<auth>/realms/<realm>.
+  scheme: https
+  hosts:
+    portal: portal.example.com
+    auth: auth.example.com
+    git: git.example.com
+  realm: baracel
+  imagePullSecrets: []
+  # Applied to every pod
+  podSecurityContext:
+    seccompProfile: { type: RuntimeDefault }
+
+# Secrets that must exist in the release namespace. Create them with your secret manager, or scripts/kind-secrets.sh for kind.
+existingSecrets:
+  postgres: postgres-credentials             # POSTGRES_PASSWORD
+  keycloak: keycloak-secrets                 # KEYCLOAK_ADMIN, KEYCLOAK_ADMIN_PASSWORD
+  keycloakRealm: keycloak-realm-secrets      # values for the ${PLACEHOLDERS} of the realm file (client secrets, social sign-in ids)
+  backend: backend-secrets                   # PORTAL_SERVICE_CLIENT_SECRET, PORTAL_BACKEND_AI_CLIENT_SECRET, GITEA_TOKEN, GITEA_WEBHOOK_SECRET, SOCIAL_TOKEN_KEY
+
+# ---- non-secret application settings (rendered into the ConfigMap <fullname>-config) ----
+config:
+  ai:
+    mode: http                    # backend: stub (no AI service) or http
+    llmProvider: ollama           # ai-service: ollama, openai_compatible or fake
+    ollamaModel: qwen2.5:7b-instruct
+    embeddingProvider: sentence_transformers
+    embeddingModel: BAAI/bge-m3
+    embeddingDevice: cpu          # cpu or cuda
+    maxUploadMb: 25
+  social:
+    linkedinEnabled: false
+    linkedinCompanyEnabled: false
+  # Spring profile of the backend. "local" loads the demo seed (people, Sprint 23, leave); leave empty in production.
+  springProfile: ""
+
+# ---- ingress ----
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  # secret names with the TLS certificate per host; empty = plain HTTP
+  tls:
+    portal: ""
+    auth: ""
+    git: ""
+
+networkPolicy:
+  # Restricts who may talk to the databases, the AI service and ChromaDB. Needs a CNI that enforces NetworkPolicy.
+  enabled: false
+  ingressNamespace: ingress-nginx
+
+# ---- components ----
+postgres:
+  image: { repository: postgres, tag: "16.14", pullPolicy: IfNotPresent }
+  portal:                          # databases portal, gitea, ai_service
+    enabled: true
+    persistence: { size: 2Gi, storageClass: "" }
+    resources: { requests: { cpu: 50m, memory: 128Mi }, limits: { cpu: "1", memory: 512Mi } }
+  keycloak:                        # database keycloak
+    enabled: true
+    persistence: { size: 1Gi, storageClass: "" }
+    resources: { requests: { cpu: 50m, memory: 96Mi }, limits: { cpu: 500m, memory: 384Mi } }
+  podSecurityContext: { fsGroup: 999 }
+
+keycloak:
+  enabled: true
+  # The stock Keycloak with the Baracel realm and login theme baked in (infra/k8s/images/keycloak/Dockerfile)
+  image: { repository: baracel/keycloak, tag: local, pullPolicy: IfNotPresent }
+  replicaCount: 1
+  # start-dev is HTTP-only and not for production: use "start" with TLS and an optimized image there.
+  args: ["start-dev", "--import-realm", "--health-enabled=true"]
+  resources: { requests: { cpu: 200m, memory: 640Mi }, limits: { cpu: "2", memory: 1280Mi } }
+  startupFailureThreshold: 60
+
+backend:
+  enabled: true
+  image: { repository: baracel/portal-backend, tag: local, pullPolicy: IfNotPresent }
+  replicaCount: 1
+  resources: { requests: { cpu: 200m, memory: 512Mi }, limits: { cpu: "2", memory: 1Gi } }
+  podSecurityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001 }
+  extraEnv: []
+
+frontend:
+  enabled: true
+  image: { repository: baracel/portal-frontend, tag: local, pullPolicy: IfNotPresent }
+  replicaCount: 1
+  resources: { requests: { cpu: 10m, memory: 24Mi }, limits: { cpu: 200m, memory: 96Mi } }
+  podSecurityContext: { runAsNonRoot: true, runAsUser: 101, runAsGroup: 101 }
+
+aiService:                         # only the backend calls it: no Ingress
+  enabled: true
+  image: { repository: baracel/ai-service, tag: local, pullPolicy: IfNotPresent }
+  resources: { requests: { cpu: 250m, memory: 1Gi }, limits: { cpu: "3", memory: 3584Mi } }
+  podSecurityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001 }
+  persistence:
+    models: { size: 6Gi, storageClass: "" }      # embedding model cache (downloaded on first start)
+    uploads: { size: 1Gi, storageClass: "" }
+  startupFailureThreshold: 180     # x10 s: the first start downloads the model
+
+chroma:
+  enabled: true
+  image: { repository: chromadb/chroma, tag: "1.5.9", pullPolicy: IfNotPresent }
+  persistence: { size: 2Gi, storageClass: "" }
+  resources: { requests: { cpu: 50m, memory: 128Mi }, limits: { cpu: "1", memory: 512Mi } }
+
+gitea:
+  enabled: true
+  image: { repository: gitea/gitea, tag: 1.24.6-rootless, pullPolicy: IfNotPresent }
+  persistence: { size: 2Gi, storageClass: "" }
+  resources: { requests: { cpu: 100m, memory: 192Mi }, limits: { cpu: "1", memory: 640Mi } }
+  podSecurityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000 }
+
+mailpit:
+  enabled: true
+  image: { repository: axllent/mailpit, tag: v1.32, pullPolicy: IfNotPresent }
+  resources: { requests: { cpu: 10m, memory: 24Mi }, limits: { cpu: 200m, memory: 128Mi } }
+
+# Ollama runs outside the cluster (GPU). A selector-less Service plus an Endpoints object point at the host.
+ollama:
+  enabled: true
+  port: 11434
+  # ONE setting: the address of the host (kind on Linux: the gateway of the docker network "kind"; Docker Desktop: host.docker.internal's IP).
+  hostAddress: ""
+
+# Added to every component (examples: tolerations, nodeSelector). Kept simple on purpose.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podDisruptionBudget: { enabled: false }

@@ -89,12 +89,12 @@ if [ -n "${DANIEL:-}" ]; then
   if [ "$st" != DONE ]; then fail "access test: the marker document was not indexed (job status '$st')"; else
     ask() { # ask <token> -> prints the JSON of the assistant message (non streaming)
       local c; c=$(api "$1" POST /api/ai/conversations -H 'Content-Type: application/json' -d '{}' | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
-      api "$1" POST "/api/ai/conversations/$c/messages" -H 'Content-Type: application/json' -d "{\"message\":\"What is the $MARK codename about?\"}"
+      api "$1" POST "/api/ai/conversations/$c/messages" -H 'Content-Type: application/json' -d "{\"message\":\"What is the secret Lantern battery supplier codename about?\"}"
     }
     sources_of() { python3 -c 'import sys,json; m=json.load(sys.stdin)["assistantMessage"]; print(m["content"]+"|"+",".join(s["collection"]+"/"+s["title"] for s in m["sources"]))' 2>/dev/null; }
     a=$(ask "$AISHA" | sources_of); l=$(ask "$LENA" | sources_of)
     if printf '%s' "$a" | grep -q 'product/smoke-access.pdf'; then pass "access: Sales (Aisha) gets the product document as a source"; else fail "access: Aisha got no source from the product collection: $a"; fi
-    if printf '%s' "$l" | grep -qi "product/\|$MARK\|battery supplier"; then fail "access: Lena (HR, no product access) received product text or a product source: $l"; else pass "access: Lena (HR) gets no source and no text from the product collection"; fi
+    if printf '%s' "$l" | grep -qi "product/\|$MARK\|supplier agreement"; then fail "access: Lena (HR, no product access) received product text or a product source: $l"; else pass "access: Lena (HR) gets no source and no text from the product collection"; fi
   fi
   [ -n "$doc" ] && api "$DANIEL" DELETE "/api/knowledge/collections/product/documents/$doc" >/dev/null
 fi

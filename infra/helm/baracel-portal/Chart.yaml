@@ -1,0 +1,12 @@
+apiVersion: v2
+name: baracel-portal
+description: Baracel Employee Portal (Keycloak, backend, frontend, AI service, ChromaDB, Gitea, PostgreSQL, Mailpit)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.29.0-0"
+keywords: [baracel, portal, keycloak, spring-boot, react, fastapi, rag]
+home: https://github.com/baracel/employee-portal
+sources: []
+maintainers:
+  - name: Baracel platform team

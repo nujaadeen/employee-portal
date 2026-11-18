@@ -67,10 +67,10 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 
 ## Prompt 10 (local Kubernetes with kind)
 - [x] 1. Images (backend, frontend, ai-service, Keycloak)
-- [ ] 2. Cluster scripts
-- [ ] 3. Manifests (Kustomize base and local overlay)
-- [ ] 4. Keycloak issuer and host names, Gitea
-- [ ] 5. Smoke test
-- [ ] 6. Seed data
-- [ ] 7. Docs
-- [ ] 8. Verify
+- [x] 2. Cluster scripts
+- [x] 3. Manifests (Kustomize base and local overlay)
+- [x] 4. Keycloak issuer and host names, Gitea
+- [x] 5. Smoke test (16 of 16 PASS with real Ollama)
+- [x] 6. Seed data
+- [x] 7. Docs
+- [x] 8. Verify (down, up from scratch, smoke, seed, screenshots in docs/kind/)

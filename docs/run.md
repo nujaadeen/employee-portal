@@ -152,3 +152,6 @@ cd ../backend && AI_MODE=http PORTAL_BACKEND_AI_CLIENT_SECRET=change-me-backend-
 cd ../frontend && npx playwright test e2e/ai.spec.ts e2e/knowledge.spec.ts
 ```
 The product, brand, campaign and engineering collections need some documents: `uv run python evals/run_evals.py --token "$(../scripts/get-ai-token.sh 'ai:invoke ai:ingest')"` uploads the samples. For real answers use `AI_LLM_PROVIDER=ollama` (the default) instead. The tests add and remove their own PDF in Product catalogue and put the HR policies roles back.
+
+## Local Kubernetes (kind)
+The whole portal also runs in a local kind cluster behind an ingress: `scripts/kind-up.sh`, `scripts/kind-smoke.sh`, `scripts/kind-seed.sh`. Everything is explained in `docs/kind.md`.
