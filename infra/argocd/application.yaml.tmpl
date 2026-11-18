@@ -1,0 +1,26 @@
+# The portal as an Argo CD Application: the chart comes from the OCI registry, the values are declared here.
+# scripts/kind-argocd.sh renders this file (@PLACEHOLDERS@) and applies it. Secrets are NOT part of it: they live in the cluster (kind-secrets.sh).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: baracel-portal
+  namespace: argocd
+  # no "resources-finalizer": deleting the Application must not delete the portal
+spec:
+  project: baracel
+  source:
+    repoURL: @CHART_REPO@                 # no oci:// prefix
+    chart: baracel-portal
+    targetRevision: "@CHART_VERSION@"
+    helm:
+      releaseName: baracel-portal
+      valueFiles: [@VALUE_FILES@]
+      valuesObject:
+@VALUES_OBJECT@
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: baracel-portal
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ServerSideApply=true, PruneLast=true]
+    retry: { limit: 5, backoff: { duration: 10s, factor: 2, maxDuration: 3m } }

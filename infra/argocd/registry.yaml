@@ -1,0 +1,46 @@
+# A tiny OCI registry INSIDE the kind cluster, for the Helm chart (the local stand-in for ghcr.io). Plain HTTP, no authentication, local only.
+apiVersion: v1
+kind: Namespace
+metadata: { name: chart-registry, labels: { app.kubernetes.io/part-of: baracel-gitops } }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: chart-registry, namespace: chart-registry }
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: chart-registry-data, namespace: chart-registry }
+spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 1Gi } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: chart-registry, namespace: chart-registry }
+spec:
+  selector: { app.kubernetes.io/name: chart-registry }
+  ports: [{ name: http, port: 5000, targetPort: http }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: chart-registry, namespace: chart-registry, labels: { app.kubernetes.io/name: chart-registry } }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app.kubernetes.io/name: chart-registry } }
+  template:
+    metadata: { labels: { app.kubernetes.io/name: chart-registry } }
+    spec:
+      serviceAccountName: chart-registry
+      automountServiceAccountToken: false
+      securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: registry
+          image: registry:2.8.3
+          ports: [{ name: http, containerPort: 5000 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          env: [{ name: REGISTRY_STORAGE_DELETE_ENABLED, value: "true" }]
+          readinessProbe: { httpGet: { path: /v2/, port: http }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /v2/, port: http }, periodSeconds: 20 }
+          resources: { requests: { cpu: 10m, memory: 32Mi }, limits: { cpu: 200m, memory: 128Mi } }
+          volumeMounts: [{ name: data, mountPath: /var/lib/registry }]
+      volumes: [{ name: data, persistentVolumeClaim: { claimName: chart-registry-data } }]

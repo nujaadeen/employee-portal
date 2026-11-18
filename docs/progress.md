@@ -79,3 +79,8 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] Chart infra/helm/baracel-portal (helpers, values and schema, all components, ingress, EndpointSlice for Ollama, optional NetworkPolicy and PDB, helm test)
 - [x] KIND_DEPLOY=helm in scripts/kind-up.sh, docs
 - [x] Deployed in kind with Helm (release baracel-portal, revision 2), helm test passed, smoke 16/16 PASS with Ollama, seed done
+
+## GitOps
+- [x] GitHub Actions: ci, images, chart (written, not yet run on GitHub)
+- [x] Argo CD in kind, chart from the local OCI registry, automated sync, self-heal verified
+- [x] kind-host-services.sh, kind-public.sh start

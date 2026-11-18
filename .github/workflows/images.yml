@@ -1,0 +1,55 @@
+name: images
+
+# Builds the four images and pushes them to GitHub Container Registry: ghcr.io/<owner>/baracel-portal-<name>
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths: [backend/**, frontend/**, ai-service/**, keycloak/**, infra/k8s/images/**, design/tokens.css, design/logo/**, .github/workflows/images.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: backend,    dockerfile: backend/Dockerfile }
+          - { name: frontend,   dockerfile: frontend/Dockerfile }
+          - { name: ai-service, dockerfile: ai-service/Dockerfile.slim }
+          - { name: keycloak,   dockerfile: infra/k8s/images/keycloak/Dockerfile }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/baracel-portal-${{ matrix.name }}
+          tags: |
+            type=sha,format=short
+            type=ref,event=tag
+            type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .                       # the repository root: the Dockerfiles copy from several folders
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

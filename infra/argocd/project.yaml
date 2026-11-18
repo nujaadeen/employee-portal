@@ -1,0 +1,16 @@
+# The Argo CD project for the portal: where charts may come from and where they may be deployed.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: baracel
+  namespace: argocd
+spec:
+  description: Baracel Employee Portal
+  sourceRepos:
+    - chart-registry.chart-registry.svc.cluster.local:5000/*      # the local OCI registry (kind)
+    - ghcr.io/*                                                    # the chart published by GitHub Actions
+  destinations:
+    - { server: https://kubernetes.default.svc, namespace: baracel-portal }
+  clusterResourceWhitelist: []                                    # the chart needs no cluster-wide resources
+  namespaceResourceWhitelist:
+    - { group: "*", kind: "*" }

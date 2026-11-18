@@ -2,6 +2,7 @@
 # Shares the kind cluster with your team through ngrok (one public address), safely.
 #   scripts/kind-public.sh up [domain] [--open]   expose it. Domain: NGROK_DOMAIN or the argument (my-name.ngrok-free.dev).
 #                                         --open: no basic-auth prompt, anyone with the link can open the sign-in page
+#   scripts/kind-public.sh start          start the tunnel only (after a reboot or a new session); nothing else changes
 #   scripts/kind-public.sh status         is it up, what is the address
 #   scripts/kind-public.sh check          tests through the public address (unauthenticated is refused, admin console is closed, ...)
 #   scripts/kind-public.sh stop           stop the tunnel only
@@ -23,6 +24,7 @@ pub_value() { [ -f "$PUB_ENV" ] || return 1; grep -E "^${1}=" "$PUB_ENV" | tail 
 ngrok_running() { [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; }
 tunnel_url() { curl -s -m3 http://127.0.0.1:4040/api/tunnels 2>/dev/null | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d["tunnels"][0]["public_url"] if d["tunnels"] else "")' 2>/dev/null || true; }
 stop_tunnel() { if ngrok_running; then kill "$(cat "$PID_FILE")" 2>/dev/null || true; rm -f "$PID_FILE"; log "ngrok tunnel stopped"; else log "no tunnel started by this script"; fi; }
+argo_managed() { kubectl --context "$KIND_CONTEXT" -n argocd get application baracel-portal >/dev/null 2>&1; }
 gateway() { docker network inspect kind -f '{{range .IPAM.Config}}{{.Gateway}} {{end}}' | tr ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1; }
 
 helm_values_args() { # local or public
@@ -70,12 +72,17 @@ up)
   # 4. the chart in public mode
   log "helm upgrade: one public address $DOMAIN (Keycloak under /auth, basic auth, admin console closed)"
   k wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s >/dev/null
+  if argo_managed; then
+    log "Argo CD manages the release: updating the Application (public values)"
+    "$ROOT/scripts/kind-argocd.sh" deploy --mode public >/dev/null
+  else
   # the controller's admission webhook may need a few more seconds after a restart: try again before giving up
   for attempt in 1 2 3 4 5; do
     # shellcheck disable=SC2046
     if helm --kube-context "$KIND_CONTEXT" upgrade baracel-portal "$CHART" -n "$NS" $(helm_values_args) --set "global.hosts.portal=$DOMAIN" --set "global.hosts.auth=$DOMAIN" ${OPEN:+$([ "$OPEN" = 1 ] && echo '--set ingress.basicAuth.secretName=')} >/dev/null 2>&1; then break; fi
     [ "$attempt" = 5 ] && die "helm upgrade failed five times (helm -n $NS --kube-context $KIND_CONTEXT status baracel-portal)"; sleep 10
   done
+  fi
   for d in keycloak portal-backend portal-frontend ai-service; do kn rollout status "deployment/$d" --timeout=900s >/dev/null; done
 
   # 5. Keycloak realm: redirect URIs, shared demo password, no self-registration, no dev direct grants
@@ -97,7 +104,7 @@ up)
   # 6. ngrok
   if ngrok_running; then stop_tunnel; fi
   log "starting ngrok -> http://127.0.0.1:80 (the kind ingress)"
-  nohup ngrok http --url="https://$DOMAIN" 80 --log=stdout --log-format=json > /tmp/baracel-ngrok.log 2>&1 &
+  setsid nohup ngrok http --url="https://$DOMAIN" 80 --log=stdout --log-format=json > /tmp/baracel-ngrok.log 2>&1 &
   echo $! > "$PID_FILE"
   for _ in $(seq 1 30); do [ -n "$(tunnel_url)" ] && break; sleep 1; done
   [ -n "$(tunnel_url)" ] || { tail -5 /tmp/baracel-ngrok.log | cut -c1-200; die "ngrok did not start (domain not yours, or already used by another tunnel?)"; }
@@ -110,6 +117,16 @@ The portal is public: https://$DOMAIN/
   It works while this laptop, the kind cluster and the tunnel are up. Stop sharing: scripts/kind-public.sh stop   (or: local)
   ngrok shows a warning page on the first visit of each browser: choose "Visit Site".
 EOF
+  ;;
+start)
+  need ngrok curl
+  D=$(pub_value NGROK_DOMAIN || true); [ -n "$D" ] || die "no infra/public.env: run up first"
+  if ngrok_running; then log "tunnel already running: $(tunnel_url)"; exit 0; fi
+  setsid nohup ngrok http --url="https://$D" 80 --log=stdout --log-format=json > /tmp/baracel-ngrok.log 2>&1 < /dev/null &
+  echo $! > "$PID_FILE"
+  for _ in $(seq 1 30); do [ -n "$(tunnel_url)" ] && break; sleep 1; done
+  [ -n "$(tunnel_url)" ] || die "ngrok did not start (see /tmp/baracel-ngrok.log)"
+  log "tunnel up: $(tunnel_url)"
   ;;
 status)
   if ngrok_running; then echo "tunnel up: $(tunnel_url)"; else echo "no tunnel started by this script"; fi
@@ -142,8 +159,9 @@ local)
   need helm kubectl
   stop_tunnel
   log "back to the local-only set-up"
-  helm --kube-context "$KIND_CONTEXT" upgrade baracel-portal "$CHART" -n "$NS" -f "$CHART/values-kind.yaml" --set "ollama.hostAddress=$(gateway)" \
-    --set "config.ai.llmProvider=$(kn get configmap portal-config -o jsonpath='{.data.AI_LLM_PROVIDER}')" >/dev/null
+  if argo_managed; then "$ROOT/scripts/kind-argocd.sh" deploy --mode local >/dev/null
+  else helm --kube-context "$KIND_CONTEXT" upgrade baracel-portal "$CHART" -n "$NS" -f "$CHART/values-kind.yaml" --set "ollama.hostAddress=$(gateway)" \
+    --set "config.ai.llmProvider=$(kn get configmap portal-config -o jsonpath='{.data.AI_LLM_PROVIDER}')" >/dev/null; fi
   for d in keycloak portal-backend portal-frontend ai-service; do kn rollout status "deployment/$d" --timeout=900s >/dev/null; done
   kn exec -i deploy/keycloak -- bash -c '
     KC=/opt/keycloak/bin/kcadm.sh

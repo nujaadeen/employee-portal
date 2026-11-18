@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: mvn verify (Testcontainers needs Docker, which the runner has)
+        working-directory: backend
+        run: mvn -B -ntp verify
+      - name: The API contract in docs/openapi.json must be committed
+        run: git diff --exit-code docs/openapi.json
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: The generated API types must match docs/openapi.json
+        run: npm run api:types && git diff --exit-code src/api/schema.d.ts
+
+  ai-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults: { run: { working-directory: ai-service } }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: ai-service/uv.lock
+      - run: uv sync --frozen --python 3.12
+      - run: uv run ruff check .
+      - run: uv run mypy ai_service
+      - run: uv run pytest          # fake LLM, fake embedder, ephemeral Chroma: no network, no GPU
+
+  chart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
+        with:
+          version: v4.3.2
+      - name: helm lint (default, kind and public values)
+        run: |
+          helm lint infra/helm/baracel-portal --set ollama.hostAddress=10.0.0.1
+          helm lint infra/helm/baracel-portal -f infra/helm/baracel-portal/values-kind.yaml --set ollama.hostAddress=10.0.0.1
+          helm lint infra/helm/baracel-portal -f infra/helm/baracel-portal/values-kind.yaml -f infra/helm/baracel-portal/values-public.yaml \
+            --set ollama.hostAddress=10.0.0.1 --set global.hosts.portal=x.example.com --set global.hosts.auth=x.example.com
+      - name: The schema must refuse bad values
+        run: "! helm lint infra/helm/baracel-portal --set global.scheme=ftp --set ollama.hostAddress=10.0.0.1"
+      - name: Render and validate the Kubernetes objects (kubeconform)
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar -xz kubeconform
+          helm template t infra/helm/baracel-portal -f infra/helm/baracel-portal/values-kind.yaml --set ollama.hostAddress=10.0.0.1 | ./kubeconform -strict -summary -
+          kubectl kustomize infra/k8s/overlays/local | ./kubeconform -strict -summary -ignore-missing-schemas -
+      - name: Shell scripts parse
+        run: for f in scripts/*.sh scripts/lib/*.sh infra/k8s/images/*/*.sh; do bash -n "$f"; done

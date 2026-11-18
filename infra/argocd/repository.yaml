@@ -1,0 +1,13 @@
+# Tells Argo CD that the local registry holds OCI Helm charts and speaks plain HTTP (local only).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chart-registry
+  namespace: argocd
+  labels: { argocd.argoproj.io/secret-type: repository }
+stringData:
+  name: chart-registry
+  type: helm
+  url: chart-registry.chart-registry.svc.cluster.local:5000/charts
+  enableOCI: "true"
+  insecureOCIForceHttp: "true"

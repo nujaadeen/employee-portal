@@ -3,6 +3,7 @@
 #   scripts/kind-up.sh
 # Options (environment):
 #   KIND_SKIP_BUILD=1        do not rebuild the images (they must exist locally)
+#   KIND_EMBEDDING_PROVIDER=fake  (Helm mode) fake embeddings: no 2 GB model download. Used by CI
 #   KIND_LLM_PROVIDER=fake   ai-service uses the fake LLM (instant canned answers, no Ollama). Default: ollama
 #   OLLAMA_HOST_ADDR=<ip>    address of the Docker host as the cluster sees it (default: found automatically)
 #   KIND_DEPLOY=helm         deploy with the Helm chart (infra/helm/baracel-portal) instead of Kustomize. Default: kustomize
@@ -92,7 +93,8 @@ if [ "$KIND_DEPLOY" = helm ]; then
   log "installing the Helm chart (release baracel-portal, values-kind.yaml)"
   helm --kube-context "$KIND_CONTEXT" upgrade --install baracel-portal "$ROOT/infra/helm/baracel-portal" --namespace "$NS" --create-namespace \
     -f "$ROOT/infra/helm/baracel-portal/values-kind.yaml" --set "ollama.hostAddress=$OLLAMA_HOST_ADDR" --set "ollama.port=$OLLAMA_PORT" \
-    ${KIND_LLM_PROVIDER:+--set "config.ai.llmProvider=$KIND_LLM_PROVIDER"} >/dev/null
+    ${KIND_LLM_PROVIDER:+--set "config.ai.llmProvider=$KIND_LLM_PROVIDER"} \
+    ${KIND_EMBEDDING_PROVIDER:+--set "config.ai.embeddingProvider=$KIND_EMBEDDING_PROVIDER"} >/dev/null
 else
   sed -e "s|@OLLAMA_HOST_ADDR@|$OLLAMA_HOST_ADDR|" -e "s|@OLLAMA_PORT@|$OLLAMA_PORT|" "$ROOT/infra/k8s/overlays/local/ollama-endpoints.yaml.tmpl" > /tmp/ollama-endpoints.yaml
   log "applying the manifests (Kustomize overlay local)"
