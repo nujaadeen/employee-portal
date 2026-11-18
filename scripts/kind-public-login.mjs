@@ -14,7 +14,7 @@ mkdirSync(out, { recursive: true })
 const base = `https://${env.NGROK_DOMAIN}`
 
 const browser = await chromium.launch()   // no flags: https is a secure context
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, httpCredentials: { username: env.PUBLIC_BASIC_USER, password: env.PUBLIC_BASIC_PASSWORD } })
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, ...(env.PUBLIC_MODE === 'open' ? {} : { httpCredentials: { username: env.PUBLIC_BASIC_USER, password: env.PUBLIC_BASIC_PASSWORD } }) })
 const page = await ctx.newPage()
 await page.goto(base + '/')
 // ngrok free plan warning page: "Visit Site" (a button or a link) once per browser

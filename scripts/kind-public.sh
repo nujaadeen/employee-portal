@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Shares the kind cluster with your team through ngrok (one public address), safely.
-#   scripts/kind-public.sh up [domain]    expose it:  NGROK_DOMAIN or the argument, for example my-name.ngrok-free.dev
+#   scripts/kind-public.sh up [domain] [--open]   expose it. Domain: NGROK_DOMAIN or the argument (my-name.ngrok-free.dev).
+#                                         --open: no basic-auth prompt, anyone with the link can open the sign-in page
 #   scripts/kind-public.sh status         is it up, what is the address
 #   scripts/kind-public.sh check          tests through the public address (unauthenticated is refused, admin console is closed, ...)
 #   scripts/kind-public.sh stop           stop the tunnel only
@@ -34,7 +35,8 @@ up)
   need ngrok helm kubectl openssl python3 curl docker
   cluster_exists || die "cluster $KIND_CLUSTER does not exist: run scripts/kind-up.sh (KIND_DEPLOY=helm) first"
   kn get deployment portal-backend -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}' | grep -qx Helm || die "the cluster was not deployed with Helm. Run: KIND_DEPLOY=helm scripts/kind-up.sh (delete the namespace first when it holds a Kustomize deployment)"
-  DOMAIN=${1:-${NGROK_DOMAIN:-$(pub_value NGROK_DOMAIN || true)}}
+  OPEN=0; args=(); for a in "$@"; do if [ "$a" = "--open" ]; then OPEN=1; else args+=("$a"); fi; done
+  DOMAIN=${args[0]:-${NGROK_DOMAIN:-$(pub_value NGROK_DOMAIN || true)}}
   [ -n "$DOMAIN" ] || die "no domain. Give it: scripts/kind-public.sh up my-name.ngrok-free.dev  (the dashboard at https://dashboard.ngrok.com/domains lists yours)"
   [[ "$DOMAIN" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$ ]] || die "'$DOMAIN' is not a host name"
   ngrok config check >/dev/null 2>&1 || die "ngrok has no valid configuration: run  ngrok config add-authtoken <your token>  once (dashboard.ngrok.com/get-started/your-authtoken)"
@@ -49,10 +51,13 @@ up)
   else sed -i "s|^NGROK_DOMAIN=.*|NGROK_DOMAIN=$DOMAIN|" "$PUB_ENV"; fi
   chmod 600 "$PUB_ENV"
 
-  # 2. basic auth Secret for the ingress
+  # 2. basic auth Secret for the ingress (not in --open mode)
+  sed -i '/^PUBLIC_MODE=/d' "$PUB_ENV"; echo "PUBLIC_MODE=$([ "$OPEN" = 1 ] && echo open || echo basic)" >> "$PUB_ENV"
+  if [ "$OPEN" = 0 ]; then
   hash=$(openssl passwd -apr1 "$(pub_value PUBLIC_BASIC_PASSWORD)")
   tmp=$(mktemp); chmod 600 "$tmp"; printf '%s:%s\n' "$(pub_value PUBLIC_BASIC_USER)" "$hash" > "$tmp"
   kn create secret generic portal-basic-auth --from-file=auth="$tmp" --dry-run=client -o yaml | kn apply -f - >/dev/null; rm -f "$tmp"
+  fi
 
   # 3. ingress-nginx trusts the headers ngrok sets (client address and https), so Keycloak builds https links
   cur=$(k -n ingress-nginx get configmap ingress-nginx-controller -o jsonpath='{.data.use-forwarded-headers}' 2>/dev/null || true)
@@ -68,7 +73,7 @@ up)
   # the controller's admission webhook may need a few more seconds after a restart: try again before giving up
   for attempt in 1 2 3 4 5; do
     # shellcheck disable=SC2046
-    if helm --kube-context "$KIND_CONTEXT" upgrade baracel-portal "$CHART" -n "$NS" $(helm_values_args) --set "global.hosts.portal=$DOMAIN" --set "global.hosts.auth=$DOMAIN" >/dev/null 2>&1; then break; fi
+    if helm --kube-context "$KIND_CONTEXT" upgrade baracel-portal "$CHART" -n "$NS" $(helm_values_args) --set "global.hosts.portal=$DOMAIN" --set "global.hosts.auth=$DOMAIN" ${OPEN:+$([ "$OPEN" = 1 ] && echo '--set ingress.basicAuth.secretName=')} >/dev/null 2>&1; then break; fi
     [ "$attempt" = 5 ] && die "helm upgrade failed five times (helm -n $NS --kube-context $KIND_CONTEXT status baracel-portal)"; sleep 10
   done
   for d in keycloak portal-backend portal-frontend ai-service; do kn rollout status "deployment/$d" --timeout=900s >/dev/null; done
@@ -99,8 +104,8 @@ up)
   cat <<EOF
 
 The portal is public: https://$DOMAIN/
-  Share with the team:  the address above, and from infra/public.env: PUBLIC_BASIC_USER / PUBLIC_BASIC_PASSWORD (browser prompt)
-                        and a demo user with PUBLIC_DEMO_PASSWORD: aisha.rahman (Sales), omar.haddad (Manager), lena.fischer (HR),
+  Share with the team:  the address above$([ "$OPEN" = 1 ] && echo " (open: no basic-auth prompt)" || echo ", and from infra/public.env: PUBLIC_BASIC_USER / PUBLIC_BASIC_PASSWORD (browser prompt)")
+                        and a demo user with PUBLIC_DEMO_PASSWORD (infra/public.env): aisha.rahman (Sales), omar.haddad (Manager), lena.fischer (HR),
                         priya.nair (Engineer), daniel.okoye (Admin), sara.qureshi (Employee)
   It works while this laptop, the kind cluster and the tunnel are up. Stop sharing: scripts/kind-public.sh stop   (or: local)
   ngrok shows a warning page on the first visit of each browser: choose "Visit Site".
@@ -116,9 +121,13 @@ check)
   U=$(pub_value PUBLIC_BASIC_USER); P=$(pub_value PUBLIC_BASIC_PASSWORD)
   fails=0; t() { if [ "$2" = "$3" ]; then printf 'PASS  %s\n' "$1"; else printf 'FAIL  %s (got %s, expected %s)\n' "$1" "$2" "$3"; fails=$((fails+1)); fi; }
   c() { curl -s -o /dev/null -w '%{http_code}' -m 30 "$@"; }
-  t "the web app asks for the basic-auth password (401 without it)" "$(c https://$D/)" 401
-  t "the web app opens with the basic-auth password" "$(c -u "$U:$P" https://$D/)" 200
-  t "wrong basic-auth password is refused" "$(c -u "$U:wrong" https://$D/)" 401
+  if [ "$(pub_value PUBLIC_MODE || echo basic)" = open ]; then
+    t "open mode: the web app opens without a password" "$(c https://$D/)" 200
+  else
+    t "the web app asks for the basic-auth password (401 without it)" "$(c https://$D/)" 401
+    t "the web app opens with the basic-auth password" "$(c -u "$U:$P" https://$D/)" 200
+    t "wrong basic-auth password is refused" "$(c -u "$U:wrong" https://$D/)" 401
+  fi
   iss=$(curl -s -m 30 "https://$D/auth/realms/baracel/.well-known/openid-configuration" | python3 -c 'import sys,json; print(json.load(sys.stdin)["issuer"])' 2>/dev/null)
   t "Keycloak discovery is public with issuer https://$D/auth/realms/baracel" "$iss" "https://$D/auth/realms/baracel"
   t "Keycloak admin console is closed from outside (403)" "$(c https://$D/auth/admin/master/console/)" 403

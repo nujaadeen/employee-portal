@@ -5,7 +5,7 @@
 ```bash
 ngrok config add-authtoken <your token>                   # once (dashboard.ngrok.com/get-started/your-authtoken)
 KIND_DEPLOY=helm scripts/kind-up.sh                       # the cluster, if it is not up (Helm is required)
-scripts/kind-public.sh up my-name.ngrok-free.dev          # your domain: dashboard.ngrok.com/domains (free accounts have one)
+scripts/kind-public.sh up my-name.ngrok-free.dev          # add --open for no basic-auth prompt. Your domain: dashboard.ngrok.com/domains (free accounts have one)
 scripts/kind-public.sh check                              # tests through the public address
 scripts/kind-public.sh stop                               # stop sharing (the tunnel only)
 scripts/kind-public.sh local                              # stop sharing AND go back to the local-only set-up
