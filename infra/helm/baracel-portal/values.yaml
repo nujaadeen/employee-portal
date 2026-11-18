@@ -15,6 +15,8 @@ global:
     auth: auth.example.com
     git: git.example.com
   realm: baracel
+  # When Keycloak shares the portal's host (a single public address), it is served under this path, for example /auth. Empty: own host.
+  authPath: ""
   imagePullSecrets: []
   # Applied to every pod
   podSecurityContext:
@@ -29,6 +31,9 @@ existingSecrets:
 
 # ---- non-secret application settings (rendered into the ConfigMap <fullname>-config) ----
 config:
+  # How pods reach Keycloak for token and admin calls. Empty: the public URL. Set it to the in-cluster service
+  # (http://keycloak:8080<authPath>) when the public URL is behind something pods should not go through.
+  internalAuthUrl: ""
   ai:
     mode: http                    # backend: stub (no AI service) or http
     llmProvider: ollama           # ai-service: ollama, openai_compatible or fake
@@ -53,6 +58,11 @@ ingress:
     portal: ""
     auth: ""
     git: ""
+  gitea: { enabled: true }          # false: Gitea is not published (it keeps running inside the cluster)
+  # Secret (key "auth", htpasswd format) that puts HTTP basic authentication in front of the web app. Empty: none.
+  basicAuth: { secretName: "" }
+  # Keycloak's admin console and master realm answer only requests from 127.0.0.1 (kubectl port-forward), never from the public address.
+  restrictKeycloakAdmin: false
 
 networkPolicy:
   # Restricts who may talk to the databases, the AI service and ChromaDB. Needs a CNI that enforces NetworkPolicy.

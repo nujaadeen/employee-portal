@@ -53,9 +53,7 @@ spec:
               valueFrom: { secretKeyRef: { name: {{ .Values.existingSecrets.postgres }}, key: POSTGRES_PASSWORD } }
             - name: KEYCLOAK_ISSUER_URI
               valueFrom: { configMapKeyRef: { name: {{ $cfg }}, key: ISSUER_URL } }
-            - name: AI_TOKEN_URI
-              value: "$(KEYCLOAK_ISSUER_URI)/protocol/openid-connect/token"
-            {{- range $env, $key := dict "KEYCLOAK_BASE_URL" "AUTH_BASE_URL" "PORTAL_WEB_URL" "PORTAL_URL" "PORTAL_CORS_ORIGINS" "PORTAL_URL" "MAIL_HOST" "MAIL_HOST" "GITEA_BASE_URL" "GITEA_BASE_URL" "GITEA_PUBLIC_URL" "GIT_PUBLIC_URL" "AI_MODE" "AI_MODE" "AI_SERVICE_URL" "AI_SERVICE_URL" "AI_MAX_UPLOAD_MB" "AI_MAX_UPLOAD_MB" "SOCIAL_LINKEDIN_ENABLED" "SOCIAL_LINKEDIN_ENABLED" "SOCIAL_LINKEDIN_COMPANY_ENABLED" "SOCIAL_LINKEDIN_COMPANY_ENABLED" }}
+            {{- range $env, $key := dict "KEYCLOAK_BASE_URL" "INTERNAL_AUTH_URL" "AI_TOKEN_URI" "INTERNAL_TOKEN_URL" "PORTAL_WEB_URL" "PORTAL_URL" "PORTAL_CORS_ORIGINS" "PORTAL_URL" "MAIL_HOST" "MAIL_HOST" "GITEA_BASE_URL" "GITEA_BASE_URL" "GITEA_PUBLIC_URL" "GIT_PUBLIC_URL" "AI_MODE" "AI_MODE" "AI_SERVICE_URL" "AI_SERVICE_URL" "AI_MAX_UPLOAD_MB" "AI_MAX_UPLOAD_MB" "SOCIAL_LINKEDIN_ENABLED" "SOCIAL_LINKEDIN_ENABLED" "SOCIAL_LINKEDIN_COMPANY_ENABLED" "SOCIAL_LINKEDIN_COMPANY_ENABLED" }}
             - name: {{ $env }}
               valueFrom: { configMapKeyRef: { name: {{ $cfg }}, key: {{ $key }} } }
             {{- end }}

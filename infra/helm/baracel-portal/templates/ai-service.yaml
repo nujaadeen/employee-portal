@@ -63,7 +63,7 @@ spec:
             - { name: OIDC_AUDIENCE, value: ai-service }
             - { name: HF_HOME, value: /models }
             - { name: UPLOAD_DIR, value: /data/uploads }
-            {{- range $env, $key := dict "OIDC_ISSUER" "ISSUER_URL" "CHROMA_URL" "CHROMA_URL" "AI_LLM_PROVIDER" "AI_LLM_PROVIDER" "OLLAMA_URL" "OLLAMA_URL" "OLLAMA_MODEL" "OLLAMA_MODEL" "EMBEDDING_PROVIDER" "EMBEDDING_PROVIDER" "EMBEDDING_MODEL" "EMBEDDING_MODEL" "EMBEDDING_DEVICE" "EMBEDDING_DEVICE" "AI_MAX_UPLOAD_MB" "AI_MAX_UPLOAD_MB" }}
+            {{- range $env, $key := dict "OIDC_ISSUER" "ISSUER_URL" "OIDC_JWKS_URL" "INTERNAL_JWKS_URL" "CHROMA_URL" "CHROMA_URL" "AI_LLM_PROVIDER" "AI_LLM_PROVIDER" "OLLAMA_URL" "OLLAMA_URL" "OLLAMA_MODEL" "OLLAMA_MODEL" "EMBEDDING_PROVIDER" "EMBEDDING_PROVIDER" "EMBEDDING_MODEL" "EMBEDDING_MODEL" "EMBEDDING_DEVICE" "EMBEDDING_DEVICE" "AI_MAX_UPLOAD_MB" "AI_MAX_UPLOAD_MB" }}
             - name: {{ $env }}
               valueFrom: { configMapKeyRef: { name: {{ $cfg }}, key: {{ $key }} } }
             {{- end }}

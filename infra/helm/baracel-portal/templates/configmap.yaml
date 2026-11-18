@@ -6,7 +6,10 @@ metadata:
 data:
   # one issuer for the browser, the backend, the ai-service, Gitea and Keycloak
   ISSUER_URL: {{ include "bp.issuer" . | quote }}
-  AUTH_BASE_URL: {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.auth) | quote }}
+  AUTH_BASE_URL: {{ include "bp.authBase" . | quote }}
+  INTERNAL_AUTH_URL: {{ include "bp.internalAuth" . | quote }}
+  INTERNAL_TOKEN_URL: {{ printf "%s/realms/%s/protocol/openid-connect/token" (include "bp.internalAuth" .) .Values.global.realm | quote }}
+  INTERNAL_JWKS_URL: {{ printf "%s/realms/%s/protocol/openid-connect/certs" (include "bp.internalAuth" .) .Values.global.realm | quote }}
   PORTAL_URL: {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.portal) | quote }}
   GIT_PUBLIC_URL: {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.git) | quote }}
   # in-cluster service names

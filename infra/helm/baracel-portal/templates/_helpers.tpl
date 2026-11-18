@@ -34,7 +34,11 @@ app.kubernetes.io/instance: {{ .root.Release.Name }}
 
 {{/* public URLs and the one issuer everybody sees */}}
 {{- define "bp.url" -}}{{- printf "%s://%s" .root.Values.global.scheme .host -}}{{- end -}}
-{{- define "bp.issuer" -}}{{- printf "%s://%s/realms/%s" .Values.global.scheme .Values.global.hosts.auth .Values.global.realm -}}{{- end -}}
+{{/* Keycloak's public base URL (with its path when it shares a host with the portal) and the issuer under it */}}
+{{- define "bp.authBase" -}}{{- printf "%s://%s%s" .Values.global.scheme .Values.global.hosts.auth (default "" .Values.global.authPath) -}}{{- end -}}
+{{- define "bp.issuer" -}}{{- printf "%s/realms/%s" (include "bp.authBase" .) .Values.global.realm -}}{{- end -}}
+{{/* how pods reach Keycloak for admin and token calls: the internal service when set, else the public URL */}}
+{{- define "bp.internalAuth" -}}{{- default (include "bp.authBase" .) .Values.config.internalAuthUrl -}}{{- end -}}
 
 {{/* pod security context: global defaults overridden by the component's own */}}
 {{- define "bp.podSecurityContext" -}}

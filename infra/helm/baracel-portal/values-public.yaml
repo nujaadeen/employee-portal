@@ -1,0 +1,15 @@
+# Public preview through ngrok: ONE public address (global.hosts.portal and global.hosts.auth are the same host, set by scripts/kind-public.sh).
+# Keycloak is served under /auth, the web app sits behind HTTP basic authentication, Keycloak's admin console is not reachable from outside,
+# Gitea is not published. Use together with values-kind.yaml:  -f values-kind.yaml -f values-public.yaml --set global.hosts.portal=<domain> --set global.hosts.auth=<domain>
+global:
+  scheme: https                    # ngrok terminates TLS
+  authPath: /auth
+
+config:
+  # pods talk to Keycloak inside the cluster for admin and token calls; only the issuer string is public
+  internalAuthUrl: "http://keycloak:8080/auth"
+
+ingress:
+  gitea: { enabled: false }
+  basicAuth: { secretName: portal-basic-auth }
+  restrictKeycloakAdmin: true

@@ -9,6 +9,7 @@
       "properties": {
         "scheme": { "type": "string", "enum": ["http", "https"] },
         "realm": { "type": "string", "minLength": 1 },
+        "authPath": { "type": "string", "pattern": "^(/[a-z0-9-]+)?$" },
         "hosts": {
           "type": "object",
           "required": ["portal", "auth", "git"],
@@ -30,6 +31,7 @@
       "type": "object",
       "properties": {
         "springProfile": { "type": "string" },
+        "internalAuthUrl": { "type": "string" },
         "ai": {
           "type": "object",
           "properties": {
@@ -48,7 +50,7 @@
     },
     "ingress": {
       "type": "object",
-      "properties": { "enabled": { "type": "boolean" }, "className": { "type": "string" } }
+      "properties": { "enabled": { "type": "boolean" }, "className": { "type": "string" }, "restrictKeycloakAdmin": { "type": "boolean" }, "gitea": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }, "basicAuth": { "type": "object", "properties": { "secretName": { "type": "string" } } } }
     },
     "ollama": {
       "type": "object",

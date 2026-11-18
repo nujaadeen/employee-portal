@@ -29,6 +29,9 @@ helm -n baracel-portal test baracel-portal
 | Ollama on the host | A selector-less Service plus an EndpointSlice. One setting: `ollama.hostAddress`. |
 | `helm test` | A pod calls the frontend, backend and AI service health endpoints from inside the cluster. |
 
+## Public preview (ngrok)
+`values-public.yaml` serves Keycloak under `/auth` on the portal's own host (`global.authPath`), adds basic auth in front of the web app (`ingress.basicAuth.secretName`, an htpasswd Secret), closes Keycloak's admin console to everything but 127.0.0.1 (`ingress.restrictKeycloakAdmin`), does not publish Gitea (`ingress.gitea.enabled=false`) and lets pods reach Keycloak through the cluster service (`config.internalAuthUrl`). `scripts/kind-public.sh` drives it; see `docs/ngrok.md`.
+
 ## Values you will touch
 `global.hosts.*` and `global.scheme`, `config.ai.llmProvider` (`ollama`, `openai_compatible`, `fake`), `config.springProfile` (`local` loads the demo seed, empty in production), `ollama.hostAddress`, `*.image.*`, `*.resources`, `*.persistence.*`, `existingSecrets.*`. See `values.yaml` (every key is commented).
 

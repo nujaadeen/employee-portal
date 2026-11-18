@@ -20,6 +20,8 @@ KIND_DEPLOY=helm scripts/kind-up.sh        # release baracel-portal, values-kind
 ```
 Both give the same resources and names, so `kind-smoke.sh`, `kind-seed.sh`, `kind-reload.sh` and the Gitea set-up work with either. They cannot share a namespace: to switch, `kubectl --context kind-baracel delete namespace baracel-portal` (deletes the data) and run `kind-up.sh` again. The chart is documented in `infra/helm/baracel-portal/README.md`. Needs Helm 3.14 or newer (tested with 4.3.2).
 
+Sharing the cluster with a team over the internet (ngrok): `docs/ngrok.md`.
+
 ## Hosts file
 Add one line, with administrator rights (`/etc/hosts` on Linux and macOS, `C:\Windows\System32\drivers\etc\hosts` on Windows):
 ```

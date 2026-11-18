@@ -4,14 +4,22 @@
 {{- $hosts := .Values.global.hosts }}
 {{- $tls := .Values.ingress.tls }}
 {{- $rules := list }}
-{{- if .Values.frontend.enabled }}{{- $rules = append $rules (dict "name" "portal-frontend" "host" $hosts.portal "tls" $tls.portal "service" "portal-frontend" "port" 8080 "path" "/" "annotations" (dict)) }}{{- end }}
+{{- if .Values.frontend.enabled }}{{- $rules = append $rules (dict "name" "portal-frontend" "host" $hosts.portal "tls" $tls.portal "service" "portal-frontend" "port" 8080 "path" "/" "annotations" (ternary (dict "nginx.ingress.kubernetes.io/auth-type" "basic" "nginx.ingress.kubernetes.io/auth-secret" .Values.ingress.basicAuth.secretName "nginx.ingress.kubernetes.io/auth-realm" "Baracel team preview") (dict) (not (empty .Values.ingress.basicAuth.secretName)))) }}{{- end }}
 {{- if .Values.backend.enabled }}{{- $rules = append $rules (dict "name" "portal-api" "host" $hosts.portal "tls" $tls.portal "service" "portal-backend" "port" 8080 "path" "/api" "annotations" (dict
       "nginx.ingress.kubernetes.io/proxy-buffering" "off"
       "nginx.ingress.kubernetes.io/proxy-read-timeout" "3600"
       "nginx.ingress.kubernetes.io/proxy-send-timeout" "3600"
       "nginx.ingress.kubernetes.io/proxy-body-size" "30m")) }}{{- end }}
-{{- if .Values.keycloak.enabled }}{{- $rules = append $rules (dict "name" "keycloak" "host" $hosts.auth "tls" $tls.auth "service" "keycloak" "port" 8080 "path" "/" "annotations" (dict "nginx.ingress.kubernetes.io/proxy-buffer-size" "16k")) }}{{- end }}
-{{- if .Values.gitea.enabled }}{{- $rules = append $rules (dict "name" "gitea" "host" $hosts.git "tls" $tls.git "service" "gitea" "port" 3000 "path" "/" "annotations" (dict "nginx.ingress.kubernetes.io/proxy-body-size" "100m")) }}{{- end }}
+{{- if .Values.keycloak.enabled }}{{- $rules = append $rules (dict "name" "keycloak" "host" $hosts.auth "tls" $tls.auth "service" "keycloak" "port" 8080 "path" (default "/" .Values.global.authPath) "annotations" (dict "nginx.ingress.kubernetes.io/proxy-buffer-size" "16k")) }}
+{{- if .Values.ingress.restrictKeycloakAdmin }}
+{{- $ap := default "" .Values.global.authPath }}
+{{- /* the admin console and the master realm are reachable only from the machine itself (kubectl port-forward), never through the public address */ -}}
+{{- range $i, $sub := list "/admin" "/realms/master" }}
+{{- $rules = append $rules (dict "name" (printf "keycloak-restricted-%d" $i) "host" $hosts.auth "tls" $tls.auth "service" "keycloak" "port" 8080 "path" (printf "%s%s" $ap $sub) "annotations" (dict "nginx.ingress.kubernetes.io/whitelist-source-range" "127.0.0.1/32")) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if and .Values.gitea.enabled .Values.ingress.gitea.enabled }}{{- $rules = append $rules (dict "name" "gitea" "host" $hosts.git "tls" $tls.git "service" "gitea" "port" 3000 "path" "/" "annotations" (dict "nginx.ingress.kubernetes.io/proxy-body-size" "100m")) }}{{- end }}
 {{- range $r := $rules }}
 {{- $ctx := dict "root" $root "c" $r.name }}
 ---
