@@ -1,0 +1,7 @@
+# Ollama runs on the Docker host, not in the cluster (it needs the GPU). This Service has no selector: scripts/kind-up.sh adds an Endpoints
+# object that points at the host address (setting OLLAMA_HOST_ADDR, see overlays/local/ollama-endpoints.yaml.tmpl and docs/kind.md).
+apiVersion: v1
+kind: Service
+metadata: { name: ollama, labels: { app.kubernetes.io/name: ollama, app.kubernetes.io/part-of: baracel-portal } }
+spec:
+  ports: [{ name: http, port: 11434, targetPort: 11434 }]

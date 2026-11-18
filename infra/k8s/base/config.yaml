@@ -1,0 +1,30 @@
+# Non-secret settings. The local overlay merges the host names. Secrets (passwords, client secrets, tokens) are NOT here:
+# scripts/kind-secrets.sh creates them from infra/.env.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portal-config
+  labels: { app.kubernetes.io/part-of: baracel-portal }
+data:
+  # one issuer for everyone: the browser, the backend, the ai-service, Gitea and Keycloak itself
+  ISSUER_URL: "http://auth.example.invalid/realms/baracel"
+  AUTH_BASE_URL: "http://auth.example.invalid"
+  PORTAL_URL: "http://portal.example.invalid"
+  GIT_PUBLIC_URL: "http://git.example.invalid"
+  CORS_ORIGIN: "http://portal.example.invalid"
+  # in-cluster service names
+  AI_SERVICE_URL: "http://ai-service:8000"
+  GITEA_BASE_URL: "http://gitea:3000"
+  CHROMA_URL: "http://chroma:8000"
+  OLLAMA_URL: "http://ollama:11434"
+  MAIL_HOST: "mailpit"
+  # provider switches
+  AI_MODE: "http"                    # backend: stub or http
+  AI_LLM_PROVIDER: "ollama"          # ai-service: ollama, openai_compatible or fake
+  OLLAMA_MODEL: "qwen2.5:7b-instruct"
+  EMBEDDING_PROVIDER: "sentence_transformers"
+  EMBEDDING_MODEL: "BAAI/bge-m3"
+  EMBEDDING_DEVICE: "cpu"
+  AI_MAX_UPLOAD_MB: "25"
+  SOCIAL_LINKEDIN_ENABLED: "false"
+  SOCIAL_LINKEDIN_COMPANY_ENABLED: "false"

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portal-config
+data:
+  ISSUER_URL: "http://auth.baracel.local/realms/baracel"
+  AUTH_BASE_URL: "http://auth.baracel.local"
+  PORTAL_URL: "http://portal.baracel.local"
+  GIT_PUBLIC_URL: "http://git.baracel.local"
+  CORS_ORIGIN: "http://portal.baracel.local"
+  # ollama (the host, needs OLLAMA_HOST=0.0.0.0 on the host) or fake (instant canned answers, no Ollama needed).
+  # scripts/kind-up.sh can switch it:  KIND_LLM_PROVIDER=fake scripts/kind-up.sh
+  AI_LLM_PROVIDER: "ollama"

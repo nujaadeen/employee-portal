@@ -1,0 +1,25 @@
+# Local overlay: host names, the single issuer, and local images. HTTP ONLY: there is no TLS in this overlay.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - { name: baracel/keycloak, newTag: local }
+  - { name: baracel/portal-backend, newTag: local }
+  - { name: baracel/portal-frontend, newTag: local }
+  - { name: baracel/ai-service, newTag: local }
+patches:
+  # host names and the one issuer
+  - path: config-local.yaml
+  - target: { kind: Ingress, name: portal-frontend }
+    patch: |-
+      - { op: replace, path: /spec/rules/0/host, value: portal.baracel.local }
+  - target: { kind: Ingress, name: portal-api }
+    patch: |-
+      - { op: replace, path: /spec/rules/0/host, value: portal.baracel.local }
+  - target: { kind: Ingress, name: keycloak }
+    patch: |-
+      - { op: replace, path: /spec/rules/0/host, value: auth.baracel.local }
+  - target: { kind: Ingress, name: gitea }
+    patch: |-
+      - { op: replace, path: /spec/rules/0/host, value: git.baracel.local }

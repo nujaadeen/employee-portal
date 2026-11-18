@@ -1,0 +1,12 @@
+# The address of the Docker host as the cluster sees it. This is the ONE setting: OLLAMA_HOST_ADDR (an IP address).
+# scripts/kind-up.sh finds it (Linux: the gateway of the docker network "kind") unless you export OLLAMA_HOST_ADDR, then renders this file.
+# macOS and Windows (Docker Desktop): see docs/kind.md.
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: ollama
+  namespace: baracel-portal
+  labels: { app.kubernetes.io/name: ollama, app.kubernetes.io/part-of: baracel-portal }
+subsets:
+  - addresses: [{ ip: "@OLLAMA_HOST_ADDR@" }]
+    ports: [{ name: http, port: @OLLAMA_PORT@, protocol: TCP }]

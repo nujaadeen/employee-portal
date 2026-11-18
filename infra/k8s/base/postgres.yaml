@@ -1,0 +1,103 @@
+# Two PostgreSQL instances, each a StatefulSet with its own volume: portal-postgres (databases portal, gitea, ai_service) and keycloak-postgres.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portal-postgres-init
+  labels: { app.kubernetes.io/part-of: baracel-portal }
+data:
+  # runs once, when the volume is empty. A volume left from an older run keeps its databases (see docs/kind.md).
+  init.sql: |
+    CREATE DATABASE portal;
+    CREATE DATABASE gitea;
+    CREATE DATABASE ai_service;
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: portal-postgres, labels: { app.kubernetes.io/name: portal-postgres, app.kubernetes.io/part-of: baracel-portal } }
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata: { name: portal-postgres, labels: { app.kubernetes.io/name: portal-postgres, app.kubernetes.io/part-of: baracel-portal } }
+spec:
+  selector: { app.kubernetes.io/name: portal-postgres }
+  ports: [{ name: postgres, port: 5432, targetPort: postgres }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: portal-postgres, labels: { app.kubernetes.io/name: portal-postgres, app.kubernetes.io/part-of: baracel-portal } }
+spec:
+  serviceName: portal-postgres
+  replicas: 1
+  selector: { matchLabels: { app.kubernetes.io/name: portal-postgres } }
+  template:
+    metadata: { labels: { app.kubernetes.io/name: portal-postgres, app.kubernetes.io/part-of: baracel-portal } }
+    spec:
+      serviceAccountName: portal-postgres
+      automountServiceAccountToken: false
+      securityContext: { fsGroup: 999 }
+      containers:
+        - name: postgres
+          image: postgres:16.14
+          ports: [{ name: postgres, containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_USER, value: postgres }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_PASSWORD } }
+          readinessProbe: { exec: { command: ["pg_isready", "-U", "postgres"] }, periodSeconds: 5, timeoutSeconds: 3, failureThreshold: 12 }
+          livenessProbe: { exec: { command: ["pg_isready", "-U", "postgres"] }, initialDelaySeconds: 20, periodSeconds: 15, timeoutSeconds: 5, failureThreshold: 6 }
+          resources: { requests: { cpu: 50m, memory: 128Mi }, limits: { cpu: "1", memory: 512Mi } }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }
+      volumes:
+        - name: init
+          configMap: { name: portal-postgres-init }
+  volumeClaimTemplates:
+    - metadata: { name: data, labels: { app.kubernetes.io/name: portal-postgres, app.kubernetes.io/part-of: baracel-portal } }
+      spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 2Gi } } }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: keycloak-postgres, labels: { app.kubernetes.io/name: keycloak-postgres, app.kubernetes.io/part-of: baracel-portal } }
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata: { name: keycloak-postgres, labels: { app.kubernetes.io/name: keycloak-postgres, app.kubernetes.io/part-of: baracel-portal } }
+spec:
+  selector: { app.kubernetes.io/name: keycloak-postgres }
+  ports: [{ name: postgres, port: 5432, targetPort: postgres }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: keycloak-postgres, labels: { app.kubernetes.io/name: keycloak-postgres, app.kubernetes.io/part-of: baracel-portal } }
+spec:
+  serviceName: keycloak-postgres
+  replicas: 1
+  selector: { matchLabels: { app.kubernetes.io/name: keycloak-postgres } }
+  template:
+    metadata: { labels: { app.kubernetes.io/name: keycloak-postgres, app.kubernetes.io/part-of: baracel-portal } }
+    spec:
+      serviceAccountName: keycloak-postgres
+      automountServiceAccountToken: false
+      securityContext: { fsGroup: 999 }
+      containers:
+        - name: postgres
+          image: postgres:16.14
+          ports: [{ name: postgres, containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_USER, value: postgres }
+            - { name: POSTGRES_DB, value: keycloak }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_PASSWORD } }
+          readinessProbe: { exec: { command: ["pg_isready", "-U", "postgres"] }, periodSeconds: 5, timeoutSeconds: 3, failureThreshold: 12 }
+          livenessProbe: { exec: { command: ["pg_isready", "-U", "postgres"] }, initialDelaySeconds: 20, periodSeconds: 15, timeoutSeconds: 5, failureThreshold: 6 }
+          resources: { requests: { cpu: 50m, memory: 96Mi }, limits: { cpu: 500m, memory: 384Mi } }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+  volumeClaimTemplates:
+    - metadata: { name: data, labels: { app.kubernetes.io/name: keycloak-postgres, app.kubernetes.io/part-of: baracel-portal } }
+      spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 1Gi } } }

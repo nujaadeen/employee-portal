@@ -1,0 +1,53 @@
+# Three hosts. The ai-service has no Ingress on purpose.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portal-frontend
+  labels: { app.kubernetes.io/part-of: baracel-portal }
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: portal.example.invalid
+      http: { paths: [{ path: /, pathType: Prefix, backend: { service: { name: portal-frontend, port: { name: http } } } }] }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portal-api
+  labels: { app.kubernetes.io/part-of: baracel-portal }
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"          # server-sent events (the streamed AI answer) must not be buffered
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "30m"          # PDF uploads (limit 25 MB)
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: portal.example.invalid
+      http: { paths: [{ path: /api, pathType: Prefix, backend: { service: { name: portal-backend, port: { name: http } } } }] }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  labels: { app.kubernetes.io/part-of: baracel-portal }
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"        # Keycloak sets large cookies and headers
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: auth.example.invalid
+      http: { paths: [{ path: /, pathType: Prefix, backend: { service: { name: keycloak, port: { name: http } } } }] }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitea
+  labels: { app.kubernetes.io/part-of: baracel-portal }
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: git.example.invalid
+      http: { paths: [{ path: /, pathType: Prefix, backend: { service: { name: gitea, port: { name: http } } } }] }
