@@ -27,6 +27,7 @@ spec:
     spec:
       serviceAccountName: chroma
       automountServiceAccountToken: false
+      enableServiceLinks: false          # the Service named "chroma" would inject CHROMA_PORT=tcp://..., which Chroma reads as its own PORT setting and crashes on
       containers:
         - name: chroma
           image: chromadb/chroma:1.5.9
