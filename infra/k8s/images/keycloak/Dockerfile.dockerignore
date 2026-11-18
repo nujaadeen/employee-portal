@@ -1,0 +1,3 @@
+*
+!keycloak/themes/**
+!keycloak/realm/baracel-realm.json

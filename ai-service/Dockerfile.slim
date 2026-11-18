@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1.7
+# AI service for Kubernetes (kind): slim, CPU only, non-root. Build context: the repository root.
+#   docker build -f ai-service/Dockerfile.slim -t baracel/ai-service:local .
+# (ai-service/Dockerfile is the CUDA image used with Docker Compose on a GPU machine.)
+#
+# The embedding model is NOT in the image. On first start it is downloaded into the volume mounted at $HF_HOME and the progress is
+# logged (infra/k8s/images/ai-service/prefetch_model.py). Later starts find it there.
+
+FROM python:3.12-slim-bookworm AS build
+COPY --from=ghcr.io/astral-sh/uv:0.12.7 /uv /usr/local/bin/uv
+WORKDIR /build
+COPY ai-service/pyproject.toml ai-service/uv.lock ./
+# Locked versions, but torch from the CPU index: the default wheels carry about 3 GB of CUDA libraries this image cannot use.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv export --frozen --no-dev --extra ml --no-hashes --no-emit-project -o all.txt \
+ && grep -viE '^(nvidia-|triton|cuda-)' all.txt > requirements.txt \
+ && uv venv /opt/venv \
+ && VIRTUAL_ENV=/opt/venv uv pip install --torch-backend cpu -r requirements.txt
+
+FROM python:3.12-slim-bookworm
+RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --create-home --home-dir /home/app --shell /usr/sbin/nologin app \
+ && mkdir -p /models /data/uploads && chown -R 10001:10001 /models /data
+COPY --from=build /opt/venv /opt/venv
+WORKDIR /app
+COPY ai-service/ai_service ./ai_service
+COPY ai-service/alembic ./alembic
+COPY ai-service/alembic.ini ./
+COPY infra/k8s/images/ai-service/ ./k8s/
+RUN chmod +x ./k8s/entrypoint.sh && chown -R 10001:10001 /app
+USER 10001:10001
+ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 HF_HOME=/models UPLOAD_DIR=/data/uploads EMBEDDING_DEVICE=cpu
+EXPOSE 8000
+HEALTHCHECK --interval=15s --timeout=5s --start-period=120s --retries=5 \
+  CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz').status == 200 else 1)"
+ENTRYPOINT ["/app/k8s/entrypoint.sh"]

@@ -64,3 +64,13 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 5. Knowledge base (screen 10)
 - [x] 6. Tests (98 Vitest, 20 Playwright)
 - [x] 7. Visual check and docs
+
+## Prompt 10 (local Kubernetes with kind)
+- [x] 1. Images (backend, frontend, ai-service, Keycloak)
+- [ ] 2. Cluster scripts
+- [ ] 3. Manifests (Kustomize base and local overlay)
+- [ ] 4. Keycloak issuer and host names, Gitea
+- [ ] 5. Smoke test
+- [ ] 6. Seed data
+- [ ] 7. Docs
+- [ ] 8. Verify

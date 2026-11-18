@@ -1,0 +1,13 @@
+*
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/vite.config.*
+!frontend/tsconfig*.json
+!frontend/eslint.config.js
+!frontend/public/**
+!frontend/src/**
+!frontend/scripts/**
+!design/tokens.css
+!design/logo/**
+!infra/k8s/images/frontend/**

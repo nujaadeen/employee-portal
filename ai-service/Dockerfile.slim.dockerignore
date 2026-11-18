@@ -1,0 +1,8 @@
+*
+!ai-service/pyproject.toml
+!ai-service/uv.lock
+!ai-service/alembic.ini
+!ai-service/ai_service/**
+!ai-service/alembic/**
+!infra/k8s/images/ai-service/**
+**/__pycache__
