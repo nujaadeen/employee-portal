@@ -70,7 +70,7 @@ postgres:
     enabled: true
     persistence: { size: 1Gi, storageClass: "" }
     resources: { requests: { cpu: 50m, memory: 96Mi }, limits: { cpu: 500m, memory: 384Mi } }
-  podSecurityContext: { fsGroup: 999 }
+  podSecurityContext: { fsGroup: 999, runAsUser: 999, runAsGroup: 999, runAsNonRoot: true }   # the image then skips its chown step, so ALL capabilities can be dropped
 
 keycloak:
   enabled: true

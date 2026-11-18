@@ -78,4 +78,4 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 ## Helm chart for kind
 - [x] Chart infra/helm/baracel-portal (helpers, values and schema, all components, ingress, EndpointSlice for Ollama, optional NetworkPolicy and PDB, helm test)
 - [x] KIND_DEPLOY=helm in scripts/kind-up.sh, docs
-- [ ] Deployed in kind with Helm, smoke test, seed
+- [x] Deployed in kind with Helm (release baracel-portal, revision 2), helm test passed, smoke 16/16 PASS with Ollama, seed done
