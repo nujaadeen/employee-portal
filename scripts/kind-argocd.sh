@@ -4,6 +4,7 @@
 #   scripts/kind-argocd.sh push           package infra/helm/baracel-portal and push it to the registry (version from Chart.yaml)
 #   scripts/kind-argocd.sh deploy [--mode local|public]   create or update the Application baracel-portal (values for the current mode) and wait until Synced and Healthy
 #   scripts/kind-argocd.sh adopt          take over a release installed with `helm` (no downtime): remove Helm's release records, then deploy
+#   scripts/kind-argocd.sh gitops <gitops-repo-url> [local|public]   hand control to the separate GitOps repo (app of apps); private repos: export GITOPS_TOKEN (and GITOPS_USER)
 #   scripts/kind-argocd.sh status | ui    status of the Application | how to open the UI (port-forward, initial password command)
 set -euo pipefail
 source "$(dirname "$0")/lib/kind-common.sh"
@@ -80,6 +81,28 @@ PY
   done
   echo "Application baracel-portal: $s"
   [ "$s" = "Synced/Healthy" ] || { ka get application baracel-portal -o jsonpath='{range .status.conditions[*]}{.type}: {.message}{"\n"}{end}' | cut -c1-300; die "not Synced and Healthy yet (scripts/kind-argocd.sh status)"; }
+  ;;
+gitops)
+  need kubectl
+  url=${2:-}; env=${3:-local}; [ -n "$url" ] || die "usage: kind-argocd.sh gitops <gitops-repo-url> [local|public]"
+  GR="$ROOT/../baracel-portal-gitops"; [ -d "$GR/bootstrap" ] || die "expected the GitOps repo checkout at $GR"
+  if [ -n "${GITOPS_TOKEN:-}" ]; then
+    # read access to a private repo (the application repo and the GitOps repo): a Secret in the cluster, never in Git; the token is not printed
+    envf=$(mktemp); chmod 600 "$envf"; trap 'rm -f "$envf"' EXIT
+    { echo "type=git"; echo "url=$url"; echo "username=${GITOPS_USER:-git}"; echo "password=$GITOPS_TOKEN"; } > "$envf"
+    k -n argocd create secret generic gitops-repo --from-env-file="$envf" --dry-run=client -o yaml | k apply -f - >/dev/null
+    k -n argocd label secret gitops-repo argocd.argoproj.io/secret-type=repository --overwrite >/dev/null
+    log "repository credentials stored (Secret gitops-repo)"
+  fi
+  log "project and root application (environment $env)"
+  sed "s|@GITOPS_REPO@|$url|" "$GR/bootstrap/project.yaml" | k apply -f - >/dev/null
+  sed -e "s|@GITOPS_REPO@|$url|" -e "s|@ENV@|$env|" "$GR/bootstrap/root.yaml" | k apply -f - >/dev/null
+  for _ in $(seq 1 60); do
+    s=$(ka get application baracel-portal -o jsonpath='{.spec.source.repoURL}' 2>/dev/null || true)
+    [ "$s" = "https://github.com/nujaadeen/employee-portal.git" ] && break; sleep 5
+  done
+  echo "root: $(ka get application root -o jsonpath='{.status.sync.status}/{.status.health.status}' 2>/dev/null)"
+  ka get application baracel-portal -o jsonpath='portal: {.status.sync.status}/{.status.health.status}{"\n"}{range .status.conditions[*]}{.type}: {.message}{"\n"}{end}' | cut -c1-300
   ;;
 status)
   ka get application baracel-portal -o jsonpath='sync: {.status.sync.status}  health: {.status.health.status}  revision: {.status.sync.revision}{"\n"}'
