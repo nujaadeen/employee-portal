@@ -1,0 +1,47 @@
+{{- if .Values.ingress.enabled }}
+{{- /* Three hosts. The ai-service has no Ingress on purpose: only the backend calls it. */ -}}
+{{- $root := . }}
+{{- $hosts := .Values.global.hosts }}
+{{- $tls := .Values.ingress.tls }}
+{{- $rules := list }}
+{{- if .Values.frontend.enabled }}{{- $rules = append $rules (dict "name" "portal-frontend" "host" $hosts.portal "tls" $tls.portal "service" "portal-frontend" "port" 8080 "path" "/" "annotations" (dict)) }}{{- end }}
+{{- if .Values.backend.enabled }}{{- $rules = append $rules (dict "name" "portal-api" "host" $hosts.portal "tls" $tls.portal "service" "portal-backend" "port" 8080 "path" "/api" "annotations" (dict
+      "nginx.ingress.kubernetes.io/proxy-buffering" "off"
+      "nginx.ingress.kubernetes.io/proxy-read-timeout" "3600"
+      "nginx.ingress.kubernetes.io/proxy-send-timeout" "3600"
+      "nginx.ingress.kubernetes.io/proxy-body-size" "30m")) }}{{- end }}
+{{- if .Values.keycloak.enabled }}{{- $rules = append $rules (dict "name" "keycloak" "host" $hosts.auth "tls" $tls.auth "service" "keycloak" "port" 8080 "path" "/" "annotations" (dict "nginx.ingress.kubernetes.io/proxy-buffer-size" "16k")) }}{{- end }}
+{{- if .Values.gitea.enabled }}{{- $rules = append $rules (dict "name" "gitea" "host" $hosts.git "tls" $tls.git "service" "gitea" "port" 3000 "path" "/" "annotations" (dict "nginx.ingress.kubernetes.io/proxy-body-size" "100m")) }}{{- end }}
+{{- range $r := $rules }}
+{{- $ctx := dict "root" $root "c" $r.name }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+  {{- $ann := merge (deepCopy $r.annotations) (deepCopy $root.Values.ingress.annotations) }}
+  {{- with $ann }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $root.Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if $r.tls }}
+  tls:
+    - hosts: [{{ $r.host | quote }}]
+      secretName: {{ $r.tls }}
+  {{- end }}
+  rules:
+    - host: {{ $r.host | quote }}
+      http:
+        paths:
+          - path: {{ $r.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "bp.res" (dict "root" $root "c" $r.service) }}
+                port: { number: {{ $r.port }} }
+{{- end }}
+{{- end }}

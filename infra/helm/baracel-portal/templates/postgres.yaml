@@ -1,0 +1,92 @@
+{{- /* Two PostgreSQL StatefulSets with their own volumes. portal: databases portal, gitea, ai_service. keycloak: database keycloak. */ -}}
+{{- $root := . -}}
+{{- range $key := list "portal" "keycloak" }}
+{{- $inst := index $root.Values.postgres $key -}}
+{{- if $inst.enabled }}
+{{- $c := printf "%s-postgres" $key -}}
+{{- $ctx := dict "root" $root "c" $c -}}
+{{- if eq $key "portal" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bp.res" $ctx }}-init
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+data:
+  # runs once, on an empty volume. A volume kept from an older release keeps its databases.
+  init.sql: |
+    CREATE DATABASE portal;
+    CREATE DATABASE gitea;
+    CREATE DATABASE ai_service;
+{{- end }}
+---
+{{ include "bp.serviceAccount" $ctx }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "bp.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: postgres, port: 5432, targetPort: postgres }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  serviceName: {{ include "bp.res" $ctx }}
+  replicas: 1
+  selector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bp.labels" $ctx | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "bp.res" $ctx }}
+      automountServiceAccountToken: false
+      {{- include "bp.imagePullSecrets" $root | nindent 6 }}
+      securityContext: {{- include "bp.podSecurityContext" (dict "root" $root "own" $root.Values.postgres.podSecurityContext) | nindent 8 }}
+      containers:
+        - name: postgres
+          image: {{ include "bp.image" $root.Values.postgres.image }}
+          imagePullPolicy: {{ $root.Values.postgres.image.pullPolicy }}
+          ports: [{ name: postgres, containerPort: 5432 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          env:
+            - { name: POSTGRES_USER, value: postgres }
+            {{- if eq $key "keycloak" }}
+            - { name: POSTGRES_DB, value: keycloak }
+            {{- end }}
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $root.Values.existingSecrets.postgres }}, key: POSTGRES_PASSWORD } }
+          readinessProbe: { exec: { command: ["pg_isready", "-U", "postgres"] }, periodSeconds: 5, timeoutSeconds: 3, failureThreshold: 12 }
+          livenessProbe: { exec: { command: ["pg_isready", "-U", "postgres"] }, initialDelaySeconds: 20, periodSeconds: 15, timeoutSeconds: 5, failureThreshold: 6 }
+          resources: {{- toYaml $inst.resources | nindent 12 }}
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            {{- if eq $key "portal" }}
+            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }
+            {{- end }}
+      {{- if eq $key "portal" }}
+      volumes:
+        - name: init
+          configMap: { name: {{ include "bp.res" $ctx }}-init }
+      {{- end }}
+      {{- include "bp.scheduling" $root | nindent 6 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels: {{- include "bp.labels" $ctx | nindent 10 }}
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with $inst.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources: { requests: { storage: {{ $inst.persistence.size }} } }
+{{- end }}
+{{- end }}

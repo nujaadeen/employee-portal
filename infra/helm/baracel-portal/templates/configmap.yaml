@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bp.res" (dict "root" . "c" "portal-config") }}
+  labels: {{- include "bp.labels" (dict "root" . "c" "portal-config") | nindent 4 }}
+data:
+  # one issuer for the browser, the backend, the ai-service, Gitea and Keycloak
+  ISSUER_URL: {{ include "bp.issuer" . | quote }}
+  AUTH_BASE_URL: {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.auth) | quote }}
+  PORTAL_URL: {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.portal) | quote }}
+  GIT_PUBLIC_URL: {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.git) | quote }}
+  # in-cluster service names
+  AI_SERVICE_URL: {{ printf "http://%s:8000" (include "bp.res" (dict "root" . "c" "ai-service")) | quote }}
+  GITEA_BASE_URL: {{ printf "http://%s:3000" (include "bp.res" (dict "root" . "c" "gitea")) | quote }}
+  CHROMA_URL: {{ printf "http://%s:8000" (include "bp.res" (dict "root" . "c" "chroma")) | quote }}
+  OLLAMA_URL: {{ printf "http://%s:%d" (include "bp.res" (dict "root" . "c" "ollama")) (int .Values.ollama.port) | quote }}
+  MAIL_HOST: {{ include "bp.res" (dict "root" . "c" "mailpit") | quote }}
+  PORTAL_DB_HOST: {{ include "bp.res" (dict "root" . "c" "portal-postgres") | quote }}
+  # settings
+  AI_MODE: {{ .Values.config.ai.mode | quote }}
+  AI_LLM_PROVIDER: {{ .Values.config.ai.llmProvider | quote }}
+  OLLAMA_MODEL: {{ .Values.config.ai.ollamaModel | quote }}
+  EMBEDDING_PROVIDER: {{ .Values.config.ai.embeddingProvider | quote }}
+  EMBEDDING_MODEL: {{ .Values.config.ai.embeddingModel | quote }}
+  EMBEDDING_DEVICE: {{ .Values.config.ai.embeddingDevice | quote }}
+  AI_MAX_UPLOAD_MB: {{ .Values.config.ai.maxUploadMb | toString | quote }}
+  SOCIAL_LINKEDIN_ENABLED: {{ .Values.config.social.linkedinEnabled | toString | quote }}
+  SOCIAL_LINKEDIN_COMPANY_ENABLED: {{ .Values.config.social.linkedinCompanyEnabled | toString | quote }}

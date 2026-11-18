@@ -1,0 +1,33 @@
+{{- /* helm test: the frontend answers, the backend is healthy, the AI service answers (from inside the cluster). */ -}}
+{{- $ctx := dict "root" . "c" "test" }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "bp.res" $ctx }}-connection
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext: {{- include "bp.podSecurityContext" (dict "root" . "own" (dict "runAsNonRoot" true "runAsUser" 101 "runAsGroup" 101)) | nindent 4 }}
+  containers:
+    - name: check
+      image: {{ include "bp.image" .Values.frontend.image }}     # has busybox wget
+      imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+      securityContext: {{- include "bp.containerSecurityContext" . | nindent 8 }}
+      command: ["sh", "-c"]
+      args:
+        - |
+          set -e
+          {{- if .Values.frontend.enabled }}
+          wget -q -O /dev/null http://{{ include "bp.res" (dict "root" . "c" "portal-frontend") }}:8080/healthz && echo "frontend ok"
+          {{- end }}
+          {{- if .Values.backend.enabled }}
+          wget -q -O - http://{{ include "bp.res" (dict "root" . "c" "portal-backend") }}:8080/actuator/health | grep -q '"status":"UP"' && echo "backend ok"
+          {{- end }}
+          {{- if .Values.aiService.enabled }}
+          wget -q -O - http://{{ include "bp.res" (dict "root" . "c" "ai-service") }}:8000/healthz | grep -q '"status":"ok"' && echo "ai-service ok"
+          {{- end }}
+      resources: { requests: { cpu: 10m, memory: 16Mi }, limits: { memory: 64Mi } }

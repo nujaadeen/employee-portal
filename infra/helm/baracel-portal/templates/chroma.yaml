@@ -1,0 +1,67 @@
+{{- if .Values.chroma.enabled }}
+{{- $c := "chroma" }}{{- $ctx := dict "root" . "c" $c }}
+{{- $ch := .Values.chroma }}
+---
+{{ include "bp.serviceAccount" $ctx }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "bp.res" $ctx }}-data
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep        # an uninstall must not delete the vectors
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with $ch.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources: { requests: { storage: {{ $ch.persistence.size }} } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "bp.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: http, port: 8000, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  strategy: { type: Recreate }           # one ReadWriteOnce volume
+  selector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bp.labels" $ctx | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "bp.res" $ctx }}
+      automountServiceAccountToken: false
+      # A Service named "chroma" would inject CHROMA_PORT=tcp://..., which Chroma reads as its own PORT setting and crashes on.
+      enableServiceLinks: false
+      {{- include "bp.imagePullSecrets" . | nindent 6 }}
+      securityContext: {{- include "bp.podSecurityContext" (dict "root" . "own" (dict)) | nindent 8 }}
+      containers:
+        - name: chroma
+          image: {{ include "bp.image" $ch.image }}
+          imagePullPolicy: {{ $ch.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 8000 }]
+          env:
+            - { name: IS_PERSISTENT, value: "TRUE" }
+            - { name: ANONYMIZED_TELEMETRY, value: "FALSE" }
+          readinessProbe: { httpGet: { path: /api/v2/heartbeat, port: http }, periodSeconds: 5, timeoutSeconds: 3, failureThreshold: 12 }
+          livenessProbe: { httpGet: { path: /api/v2/heartbeat, port: http }, initialDelaySeconds: 15, periodSeconds: 20, timeoutSeconds: 5, failureThreshold: 6 }
+          resources: {{- toYaml $ch.resources | nindent 12 }}
+          volumeMounts: [{ name: data, mountPath: /data }]
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: {{ include "bp.res" $ctx }}-data }
+      {{- include "bp.scheduling" . | nindent 6 }}
+{{- end }}

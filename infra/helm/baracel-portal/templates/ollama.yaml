@@ -1,0 +1,30 @@
+{{- if .Values.ollama.enabled }}
+{{- $ctx := dict "root" . "c" "ollama" }}
+{{- /* Ollama runs on the host (GPU). A Service without a selector plus an EndpointSlice that points at ollama.hostAddress. */ -}}
+{{- if not .Values.ollama.hostAddress }}
+{{- fail "ollama.hostAddress is required when ollama.enabled is true (the address of the host as the cluster sees it). Set ollama.enabled=false and config.ai.llmProvider=fake to run without Ollama." }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  ports:
+    - { name: http, port: {{ .Values.ollama.port }}, targetPort: {{ .Values.ollama.port }} }
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: {{ include "bp.res" $ctx }}-host
+  labels:
+    {{- include "bp.labels" $ctx | nindent 4 }}
+    kubernetes.io/service-name: {{ include "bp.res" $ctx }}        # ties the slice to the selector-less Service
+addressType: {{ if contains ":" .Values.ollama.hostAddress }}IPv6{{ else }}IPv4{{ end }}
+endpoints:
+  - addresses: [{{ .Values.ollama.hostAddress | quote }}]
+    conditions: { ready: true }
+ports:
+  - { name: http, port: {{ .Values.ollama.port }}, protocol: TCP }
+{{- end }}

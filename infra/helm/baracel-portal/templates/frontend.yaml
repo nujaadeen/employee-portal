@@ -1,0 +1,54 @@
+{{- if .Values.frontend.enabled }}
+{{- $c := "portal-frontend" }}{{- $ctx := dict "root" . "c" $c }}
+{{- $f := .Values.frontend }}
+{{- $cfg := include "bp.res" (dict "root" . "c" "portal-config") }}
+---
+{{ include "bp.serviceAccount" $ctx }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "bp.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  replicas: {{ $f.replicaCount }}
+  selector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bp.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "bp.res" $ctx }}
+      automountServiceAccountToken: false
+      {{- include "bp.imagePullSecrets" . | nindent 6 }}
+      securityContext: {{- include "bp.podSecurityContext" (dict "root" . "own" $f.podSecurityContext) | nindent 8 }}
+      containers:
+        - name: frontend
+          image: {{ include "bp.image" $f.image }}
+          imagePullPolicy: {{ $f.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 8080 }]
+          securityContext: {{- include "bp.containerSecurityContext" . | nindent 12 }}
+          env:                                                       # runtime configuration, written into the app at container start
+            - name: VITE_API_URL
+              valueFrom: { configMapKeyRef: { name: {{ $cfg }}, key: PORTAL_URL } }
+            - name: VITE_OIDC_AUTHORITY
+              valueFrom: { configMapKeyRef: { name: {{ $cfg }}, key: ISSUER_URL } }
+            - { name: VITE_OIDC_CLIENT_ID, value: portal-web }
+          readinessProbe: { httpGet: { path: /healthz, port: http }, periodSeconds: 5, timeoutSeconds: 3 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, periodSeconds: 15, timeoutSeconds: 3 }
+          resources: {{- toYaml $f.resources | nindent 12 }}
+      {{- include "bp.scheduling" . | nindent 6 }}
+{{ include "bp.pdb" $ctx }}
+{{- end }}

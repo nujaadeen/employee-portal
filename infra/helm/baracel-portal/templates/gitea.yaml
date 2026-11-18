@@ -1,0 +1,91 @@
+{{- if .Values.gitea.enabled }}
+{{- $c := "gitea" }}{{- $ctx := dict "root" . "c" $c }}
+{{- $g := .Values.gitea }}
+{{- $backendDns := printf "%s.%s.svc.cluster.local" (include "bp.res" (dict "root" . "c" "portal-backend")) .Release.Namespace }}
+---
+{{ include "bp.serviceAccount" $ctx }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "bp.res" $ctx }}-data
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep        # repositories survive an uninstall
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with $g.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources: { requests: { storage: {{ $g.persistence.size }} } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "bp.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: http, port: 3000, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bp.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "bp.res" $ctx }}
+      automountServiceAccountToken: false
+      {{- include "bp.imagePullSecrets" . | nindent 6 }}
+      securityContext: {{- include "bp.podSecurityContext" (dict "root" . "own" $g.podSecurityContext) | nindent 8 }}
+      initContainers:
+        {{- include "bp.waitForDb" (dict "root" . "host" (include "bp.res" (dict "root" . "c" "portal-postgres"))) | nindent 8 }}
+      containers:
+        - name: gitea
+          image: {{ include "bp.image" $g.image }}
+          imagePullPolicy: {{ $g.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 3000 }]
+          securityContext: {{- include "bp.containerSecurityContext" . | nindent 12 }}
+          env:
+            - { name: GITEA__database__DB_TYPE, value: postgres }
+            - { name: GITEA__database__HOST, value: {{ printf "%s:5432" (include "bp.res" (dict "root" . "c" "portal-postgres")) | quote }} }
+            - { name: GITEA__database__NAME, value: gitea }
+            - { name: GITEA__database__USER, value: postgres }
+            - name: GITEA__database__PASSWD
+              valueFrom: { secretKeyRef: { name: {{ .Values.existingSecrets.postgres }}, key: POSTGRES_PASSWORD } }
+            - { name: GITEA__server__ROOT_URL, value: {{ printf "%s/" (include "bp.url" (dict "root" . "host" .Values.global.hosts.git)) | quote }} }
+            - { name: GITEA__server__HTTP_PORT, value: "3000" }
+            - { name: GITEA__server__DISABLE_SSH, value: "true" }
+            - { name: GITEA__security__INSTALL_LOCK, value: "true" }
+            # webhooks may go to the backend's cluster service name, and nothing else that is private
+            - { name: GITEA__webhook__ALLOWED_HOST_LIST, value: {{ printf "%s,%s" $backendDns (include "bp.res" (dict "root" . "c" "portal-backend")) | quote }} }
+            - { name: GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION, value: "true" }
+            - { name: GITEA__oauth2_client__USERNAME, value: preferred_username }
+            - { name: GITEA__oauth2_client__ACCOUNT_LINKING, value: auto }
+            - { name: GITEA__mailer__ENABLED, value: "true" }
+            - { name: GITEA__mailer__PROTOCOL, value: smtp }
+            - { name: GITEA__mailer__SMTP_ADDR, value: {{ include "bp.res" (dict "root" . "c" "mailpit") | quote }} }
+            - { name: GITEA__mailer__SMTP_PORT, value: "1025" }
+            - { name: GITEA__mailer__FROM, value: "gitea@baracel.example" }
+          readinessProbe: { httpGet: { path: /api/healthz, port: http }, periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 12 }
+          livenessProbe: { httpGet: { path: /api/healthz, port: http }, initialDelaySeconds: 30, periodSeconds: 20, timeoutSeconds: 5, failureThreshold: 6 }
+          resources: {{- toYaml $g.resources | nindent 12 }}
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/gitea }
+            - { name: config, mountPath: /etc/gitea }
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: {{ include "bp.res" $ctx }}-data } }
+        - { name: config, emptyDir: {} }
+      {{- include "bp.scheduling" . | nindent 6 }}
+{{- end }}

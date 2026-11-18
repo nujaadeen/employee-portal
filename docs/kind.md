@@ -13,6 +13,13 @@ The ai-service has no Ingress: only the backend calls it, as `http://ai-service:
 ## Prerequisites
 Docker (running), [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) 0.30 or newer, `kubectl` 1.31 or newer (Kustomize is built in), `python3`, `curl`, `openssl`. About 8 GB of free memory and 12 GB of disk. Port 80 and 443 on this machine must be free. Tested with kind 0.30.0 and kubectl 1.37 on Linux.
 
+## Two ways to deploy
+`scripts/kind-up.sh` deploys with Kustomize (`infra/k8s/`, the default) or with the Helm chart (`infra/helm/baracel-portal/`):
+```bash
+KIND_DEPLOY=helm scripts/kind-up.sh        # release baracel-portal, values-kind.yaml, helm test at the end
+```
+Both give the same resources and names, so `kind-smoke.sh`, `kind-seed.sh`, `kind-reload.sh` and the Gitea set-up work with either. They cannot share a namespace: to switch, `kubectl --context kind-baracel delete namespace baracel-portal` (deletes the data) and run `kind-up.sh` again. The chart is documented in `infra/helm/baracel-portal/README.md`. Needs Helm 3.14 or newer (tested with 4.3.2).
+
 ## Hosts file
 Add one line, with administrator rights (`/etc/hosts` on Linux and macOS, `C:\Windows\System32\drivers\etc\hosts` on Windows):
 ```

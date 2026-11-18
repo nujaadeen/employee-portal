@@ -5,10 +5,14 @@
 #   KIND_SKIP_BUILD=1        do not rebuild the images (they must exist locally)
 #   KIND_LLM_PROVIDER=fake   ai-service uses the fake LLM (instant canned answers, no Ollama). Default: ollama
 #   OLLAMA_HOST_ADDR=<ip>    address of the Docker host as the cluster sees it (default: found automatically)
+#   KIND_DEPLOY=helm         deploy with the Helm chart (infra/helm/baracel-portal) instead of Kustomize. Default: kustomize
 #   KIND_WAIT_MINUTES=40     how long to wait for everything to be ready (the first start downloads a 2.3 GB model)
 set -euo pipefail
 source "$(dirname "$0")/lib/kind-common.sh"
 need docker kind kubectl python3 curl openssl
+KIND_DEPLOY="${KIND_DEPLOY:-kustomize}"
+[ "$KIND_DEPLOY" = helm ] && need helm
+[ "$KIND_DEPLOY" = helm ] || [ "$KIND_DEPLOY" = kustomize ] || die "KIND_DEPLOY must be kustomize or helm"
 
 # ---- 1. preflight ----
 docker info >/dev/null 2>&1 || die "Docker is not running"
@@ -80,17 +84,26 @@ if [ -z "${OLLAMA_HOST_ADDR:-}" ]; then
 fi
 [ -n "$OLLAMA_HOST_ADDR" ] || die "cannot find the Docker host address. Export OLLAMA_HOST_ADDR=<ip> (see docs/kind.md)"
 log "Ollama is expected on the Docker host at $OLLAMA_HOST_ADDR:$OLLAMA_PORT"
-sed -e "s|@OLLAMA_HOST_ADDR@|$OLLAMA_HOST_ADDR|" -e "s|@OLLAMA_PORT@|$OLLAMA_PORT|" "$ROOT/infra/k8s/overlays/local/ollama-endpoints.yaml.tmpl" > /tmp/ollama-endpoints.yaml
-
-log "applying the manifests (Kustomize overlay local)"
-if [ -n "${KIND_LLM_PROVIDER:-}" ]; then
-  # one-off override of the provider switch without editing the overlay
-  k kustomize "$ROOT/infra/k8s/overlays/local" | sed "s|AI_LLM_PROVIDER: ollama|AI_LLM_PROVIDER: ${KIND_LLM_PROVIDER}|; s|AI_LLM_PROVIDER: \"ollama\"|AI_LLM_PROVIDER: \"${KIND_LLM_PROVIDER}\"|" | k apply -f - >/dev/null
+if [ "$KIND_DEPLOY" = helm ]; then
+  # Helm chart. A namespace left by a Kustomize deployment cannot be taken over (different selectors): delete it first (scripts/kind-down.sh or kubectl delete ns).
+  if kn get deployment portal-backend >/dev/null 2>&1 && [ "$(kn get deployment portal-backend -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}')" != "Helm" ]; then
+    die "the namespace $NS holds a Kustomize deployment. Remove it first: kubectl --context $KIND_CONTEXT delete namespace $NS   (then run again; this deletes its data)"
+  fi
+  log "installing the Helm chart (release baracel-portal, values-kind.yaml)"
+  helm --kube-context "$KIND_CONTEXT" upgrade --install baracel-portal "$ROOT/infra/helm/baracel-portal" --namespace "$NS" --create-namespace \
+    -f "$ROOT/infra/helm/baracel-portal/values-kind.yaml" --set "ollama.hostAddress=$OLLAMA_HOST_ADDR" --set "ollama.port=$OLLAMA_PORT" \
+    ${KIND_LLM_PROVIDER:+--set "config.ai.llmProvider=$KIND_LLM_PROVIDER"} >/dev/null
 else
-  k apply -k "$ROOT/infra/k8s/overlays/local" >/dev/null
+  sed -e "s|@OLLAMA_HOST_ADDR@|$OLLAMA_HOST_ADDR|" -e "s|@OLLAMA_PORT@|$OLLAMA_PORT|" "$ROOT/infra/k8s/overlays/local/ollama-endpoints.yaml.tmpl" > /tmp/ollama-endpoints.yaml
+  log "applying the manifests (Kustomize overlay local)"
+  if [ -n "${KIND_LLM_PROVIDER:-}" ]; then
+    # one-off override of the provider switch without editing the overlay
+    k kustomize "$ROOT/infra/k8s/overlays/local" | sed "s|AI_LLM_PROVIDER: ollama|AI_LLM_PROVIDER: ${KIND_LLM_PROVIDER}|; s|AI_LLM_PROVIDER: \"ollama\"|AI_LLM_PROVIDER: \"${KIND_LLM_PROVIDER}\"|" | k apply -f - >/dev/null
+  else
+    k apply -k "$ROOT/infra/k8s/overlays/local" >/dev/null
+  fi
+  k apply -f /tmp/ollama-endpoints.yaml >/dev/null; rm -f /tmp/ollama-endpoints.yaml
 fi
-k apply -f /tmp/ollama-endpoints.yaml >/dev/null; rm -f /tmp/ollama-endpoints.yaml
-# configuration changes are picked up at start: restart what reads the ConfigMap when the pods are older than the change
 log "provider switch: AI_LLM_PROVIDER=$(kn get configmap portal-config -o jsonpath='{.data.AI_LLM_PROVIDER}')"
 
 # ---- 8. wait ----
@@ -106,6 +119,7 @@ while :; do
   sleep 20
 done
 log "all pods are ready"
+[ "$KIND_DEPLOY" = helm ] && { log "helm test"; helm --kube-context "$KIND_CONTEXT" -n "$NS" test baracel-portal >/dev/null && log "  helm test passed"; }
 
 # ---- 9. Gitea: admin, token, repositories, webhook, Keycloak sign-in ----
 "$ROOT/scripts/kind-gitea.sh"

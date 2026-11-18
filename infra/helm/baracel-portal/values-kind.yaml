@@ -1,0 +1,22 @@
+# Values for the local kind cluster (HTTP only, local images, demo seed). scripts/kind-up.sh with KIND_DEPLOY=helm uses this file and sets
+# ollama.hostAddress (and config.ai.llmProvider when KIND_LLM_PROVIDER is set) itself.
+#   helm upgrade --install baracel-portal infra/helm/baracel-portal -n baracel-portal -f infra/helm/baracel-portal/values-kind.yaml --set ollama.hostAddress=<ip>
+resourcePrefix: ""                 # bare names: portal-backend, keycloak, gitea ... (the kind scripts address them by these names)
+
+global:
+  scheme: http                     # no TLS on a laptop
+  hosts:
+    portal: portal.baracel.local
+    auth: auth.baracel.local
+    git: git.baracel.local
+
+config:
+  springProfile: local             # demo seed that matches the Keycloak users
+  ai:
+    llmProvider: ollama            # fake: instant canned answers, no Ollama
+
+ingress:
+  className: nginx
+
+ollama:
+  hostAddress: ""                  # required: set by scripts/kind-up.sh (gateway of the docker network "kind")

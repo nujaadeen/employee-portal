@@ -1,0 +1,75 @@
+{{- if .Values.backend.enabled }}
+{{- $c := "portal-backend" }}{{- $ctx := dict "root" . "c" $c }}
+{{- $b := .Values.backend }}
+{{- $cfg := include "bp.res" (dict "root" . "c" "portal-config") }}
+---
+{{ include "bp.serviceAccount" $ctx }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "bp.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  replicas: {{ $b.replicaCount }}
+  selector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bp.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "bp.res" $ctx }}
+      automountServiceAccountToken: false
+      {{- include "bp.imagePullSecrets" . | nindent 6 }}
+      securityContext: {{- include "bp.podSecurityContext" (dict "root" . "own" $b.podSecurityContext) | nindent 8 }}
+      initContainers:
+        {{- include "bp.waitForDb" (dict "root" . "host" (include "bp.res" (dict "root" . "c" "portal-postgres"))) | nindent 8 }}
+      containers:
+        - name: backend
+          image: {{ include "bp.image" $b.image }}
+          imagePullPolicy: {{ $b.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 8080 }]
+          securityContext: {{- include "bp.containerSecurityContext" . | nindent 12 }}
+          env:
+            {{- with .Values.config.springProfile }}
+            - { name: SPRING_PROFILES_ACTIVE, value: {{ . | quote }} }
+            {{- end }}
+            - { name: PORTAL_DB_URL, value: {{ printf "jdbc:postgresql://%s:5432/portal" (include "bp.res" (dict "root" . "c" "portal-postgres")) | quote }} }
+            - { name: PORTAL_DB_USER, value: postgres }
+            - { name: MAIL_PORT, value: "1025" }
+            - name: PORTAL_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ .Values.existingSecrets.postgres }}, key: POSTGRES_PASSWORD } }
+            - name: KEYCLOAK_ISSUER_URI
+              valueFrom: { configMapKeyRef: { name: {{ $cfg }}, key: ISSUER_URL } }
+            - name: AI_TOKEN_URI
+              value: "$(KEYCLOAK_ISSUER_URI)/protocol/openid-connect/token"
+            {{- range $env, $key := dict "KEYCLOAK_BASE_URL" "AUTH_BASE_URL" "PORTAL_WEB_URL" "PORTAL_URL" "PORTAL_CORS_ORIGINS" "PORTAL_URL" "MAIL_HOST" "MAIL_HOST" "GITEA_BASE_URL" "GITEA_BASE_URL" "GITEA_PUBLIC_URL" "GIT_PUBLIC_URL" "AI_MODE" "AI_MODE" "AI_SERVICE_URL" "AI_SERVICE_URL" "AI_MAX_UPLOAD_MB" "AI_MAX_UPLOAD_MB" "SOCIAL_LINKEDIN_ENABLED" "SOCIAL_LINKEDIN_ENABLED" "SOCIAL_LINKEDIN_COMPANY_ENABLED" "SOCIAL_LINKEDIN_COMPANY_ENABLED" }}
+            - name: {{ $env }}
+              valueFrom: { configMapKeyRef: { name: {{ $cfg }}, key: {{ $key }} } }
+            {{- end }}
+            {{- range $k := list "PORTAL_SERVICE_CLIENT_SECRET" "PORTAL_BACKEND_AI_CLIENT_SECRET" "GITEA_TOKEN" "GITEA_WEBHOOK_SECRET" "SOCIAL_TOKEN_KEY" }}
+            - name: {{ $k }}
+              valueFrom: { secretKeyRef: { name: {{ $.Values.existingSecrets.backend }}, key: {{ $k }} } }
+            {{- end }}
+            {{- with $b.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          startupProbe: { httpGet: { path: /actuator/health/liveness, port: http }, periodSeconds: 5, failureThreshold: 60 }
+          readinessProbe: { httpGet: { path: /actuator/health/readiness, port: http }, periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 6 }
+          livenessProbe: { httpGet: { path: /actuator/health/liveness, port: http }, periodSeconds: 20, timeoutSeconds: 5, failureThreshold: 6 }
+          resources: {{- toYaml $b.resources | nindent 12 }}
+      {{- include "bp.scheduling" . | nindent 6 }}
+{{ include "bp.pdb" $ctx }}
+{{- end }}

@@ -1,0 +1,71 @@
+{{- if .Values.keycloak.enabled }}
+{{- $c := "keycloak" }}{{- $ctx := dict "root" . "c" $c }}
+{{- $kc := .Values.keycloak }}
+---
+{{ include "bp.serviceAccount" $ctx }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "bp.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  replicas: {{ $kc.replicaCount }}
+  selector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bp.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "bp.res" $ctx }}
+      automountServiceAccountToken: false
+      {{- include "bp.imagePullSecrets" . | nindent 6 }}
+      securityContext: {{- include "bp.podSecurityContext" (dict "root" . "own" (dict)) | nindent 8 }}
+      initContainers:
+        {{- include "bp.waitForDb" (dict "root" . "host" (include "bp.res" (dict "root" . "c" "keycloak-postgres"))) | nindent 8 }}
+      containers:
+        - name: keycloak
+          image: {{ include "bp.image" $kc.image }}
+          imagePullPolicy: {{ $kc.image.pullPolicy }}
+          args: {{- toYaml $kc.args | nindent 12 }}
+          ports:
+            - { name: http, containerPort: 8080 }
+            - { name: management, containerPort: 9000 }
+          securityContext: {{- include "bp.containerSecurityContext" . | nindent 12 }}
+          env:
+            - { name: KC_HTTP_ENABLED, value: "true" }
+            - { name: KC_HTTP_PORT, value: "8080" }
+            - { name: KC_PROXY_HEADERS, value: xforwarded }          # behind the ingress
+            - { name: KC_HEALTH_ENABLED, value: "true" }
+            - { name: KC_DB, value: postgres }
+            - { name: KC_DB_URL, value: {{ printf "jdbc:postgresql://%s:5432/keycloak" (include "bp.res" (dict "root" . "c" "keycloak-postgres")) | quote }} }
+            - { name: KC_DB_USERNAME, value: postgres }
+            - name: KC_HOSTNAME                                       # the issuer everybody sees
+              valueFrom: { configMapKeyRef: { name: {{ include "bp.res" (dict "root" . "c" "portal-config") }}, key: AUTH_BASE_URL } }
+            - name: KC_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ .Values.existingSecrets.postgres }}, key: POSTGRES_PASSWORD } }
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              valueFrom: { secretKeyRef: { name: {{ .Values.existingSecrets.keycloak }}, key: KEYCLOAK_ADMIN } }
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ .Values.existingSecrets.keycloak }}, key: KEYCLOAK_ADMIN_PASSWORD } }
+          envFrom:                                                    # ${PLACEHOLDERS} of the realm file
+            - secretRef: { name: {{ .Values.existingSecrets.keycloakRealm }} }
+          startupProbe: { httpGet: { path: /health/started, port: management }, periodSeconds: 5, failureThreshold: {{ $kc.startupFailureThreshold }} }
+          readinessProbe: { httpGet: { path: /health/ready, port: management }, periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 6 }
+          livenessProbe: { httpGet: { path: /health/live, port: management }, periodSeconds: 20, timeoutSeconds: 5, failureThreshold: 6 }
+          resources: {{- toYaml $kc.resources | nindent 12 }}
+      {{- include "bp.scheduling" . | nindent 6 }}
+{{ include "bp.pdb" $ctx }}
+{{- end }}

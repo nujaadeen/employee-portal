@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["global", "existingSecrets", "config", "ingress"],
+  "properties": {
+    "global": {
+      "type": "object",
+      "required": ["scheme", "hosts", "realm"],
+      "properties": {
+        "scheme": { "type": "string", "enum": ["http", "https"] },
+        "realm": { "type": "string", "minLength": 1 },
+        "hosts": {
+          "type": "object",
+          "required": ["portal", "auth", "git"],
+          "properties": {
+            "portal": { "type": "string", "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" },
+            "auth": { "type": "string", "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" },
+            "git": { "type": "string", "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" }
+          }
+        }
+      }
+    },
+    "existingSecrets": {
+      "type": "object",
+      "required": ["postgres", "keycloak", "keycloakRealm", "backend"],
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "description": "Names of Secrets that already exist. The chart never creates or stores secret values."
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "springProfile": { "type": "string" },
+        "ai": {
+          "type": "object",
+          "properties": {
+            "mode": { "type": "string", "enum": ["stub", "http"] },
+            "llmProvider": { "type": "string", "enum": ["ollama", "openai_compatible", "fake"] },
+            "embeddingProvider": { "type": "string", "enum": ["sentence_transformers", "fake"] },
+            "embeddingDevice": { "type": "string", "enum": ["cpu", "cuda"] },
+            "maxUploadMb": { "type": "integer", "minimum": 1, "maximum": 200 }
+          }
+        },
+        "social": {
+          "type": "object",
+          "properties": { "linkedinEnabled": { "type": "boolean" }, "linkedinCompanyEnabled": { "type": "boolean" } }
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": { "enabled": { "type": "boolean" }, "className": { "type": "string" } }
+    },
+    "ollama": {
+      "type": "object",
+      "properties": { "enabled": { "type": "boolean" }, "port": { "type": "integer", "minimum": 1, "maximum": 65535 }, "hostAddress": { "type": "string" } }
+    },
+    "networkPolicy": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }
+  }
+}

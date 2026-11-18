@@ -1,0 +1,88 @@
+{{- if .Values.aiService.enabled }}
+{{- $c := "ai-service" }}{{- $ctx := dict "root" . "c" $c }}
+{{- $a := .Values.aiService }}
+{{- $cfg := include "bp.res" (dict "root" . "c" "portal-config") }}
+---
+{{ include "bp.serviceAccount" $ctx }}
+---
+{{- range $n, $p := dict "models" $a.persistence.models "uploads" $a.persistence.uploads }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "bp.res" (dict "root" $ "c" "ai-service") }}-{{ $n }}
+  labels: {{- include "bp.labels" (dict "root" $ "c" "ai-service") | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep        # the model cache (2.3 GB) and the uploaded PDFs survive an uninstall
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with $p.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources: { requests: { storage: {{ $p.size }} } }
+---
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "bp.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: http, port: 8000, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  strategy: { type: Recreate }           # two ReadWriteOnce volumes
+  selector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bp.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "bp.res" $ctx }}
+      automountServiceAccountToken: false
+      {{- include "bp.imagePullSecrets" . | nindent 6 }}
+      securityContext: {{- include "bp.podSecurityContext" (dict "root" . "own" $a.podSecurityContext) | nindent 8 }}
+      initContainers:
+        {{- include "bp.waitForDb" (dict "root" . "host" (include "bp.res" (dict "root" . "c" "portal-postgres"))) | nindent 8 }}
+      containers:
+        - name: ai-service
+          image: {{ include "bp.image" $a.image }}
+          imagePullPolicy: {{ $a.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 8000 }]
+          securityContext: {{- include "bp.containerSecurityContext" . | nindent 12 }}
+          env:
+            - { name: OIDC_AUDIENCE, value: ai-service }
+            - { name: HF_HOME, value: /models }
+            - { name: UPLOAD_DIR, value: /data/uploads }
+            {{- range $env, $key := dict "OIDC_ISSUER" "ISSUER_URL" "CHROMA_URL" "CHROMA_URL" "AI_LLM_PROVIDER" "AI_LLM_PROVIDER" "OLLAMA_URL" "OLLAMA_URL" "OLLAMA_MODEL" "OLLAMA_MODEL" "EMBEDDING_PROVIDER" "EMBEDDING_PROVIDER" "EMBEDDING_MODEL" "EMBEDDING_MODEL" "EMBEDDING_DEVICE" "EMBEDDING_DEVICE" "AI_MAX_UPLOAD_MB" "AI_MAX_UPLOAD_MB" }}
+            - name: {{ $env }}
+              valueFrom: { configMapKeyRef: { name: {{ $cfg }}, key: {{ $key }} } }
+            {{- end }}
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ .Values.existingSecrets.postgres }}, key: POSTGRES_PASSWORD } }
+            - name: DATABASE_URL
+              value: {{ printf "postgresql+psycopg://postgres:$(POSTGRES_PASSWORD)@%s:5432/ai_service" (include "bp.res" (dict "root" . "c" "portal-postgres")) | quote }}
+          # the first start downloads the embedding model into the volume: allow it time
+          startupProbe: { httpGet: { path: /healthz, port: http }, periodSeconds: 10, failureThreshold: {{ $a.startupFailureThreshold }} }
+          readinessProbe: { httpGet: { path: /readyz, port: http }, periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 3 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, periodSeconds: 20, timeoutSeconds: 5, failureThreshold: 6 }
+          resources: {{- toYaml $a.resources | nindent 12 }}
+          volumeMounts:
+            - { name: models, mountPath: /models }
+            - { name: uploads, mountPath: /data/uploads }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: models, persistentVolumeClaim: { claimName: {{ include "bp.res" $ctx }}-models } }
+        - { name: uploads, persistentVolumeClaim: { claimName: {{ include "bp.res" $ctx }}-uploads } }
+        - { name: tmp, emptyDir: {} }
+      {{- include "bp.scheduling" . | nindent 6 }}
+{{- end }}

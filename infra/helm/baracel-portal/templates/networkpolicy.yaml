@@ -1,0 +1,29 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- /* Only the intended callers may reach the databases, the AI service and ChromaDB. Needs a CNI that enforces NetworkPolicy. */ -}}
+{{- $root := . }}
+{{- $app := dict "backend" "portal-backend" "ai" "ai-service" "chroma" "chroma" "keycloak" "keycloak" "gitea" "gitea" "portalDb" "portal-postgres" "kcDb" "keycloak-postgres" }}
+{{- $from := dict
+      "ai-service" (list "portal-backend")
+      "chroma" (list "ai-service")
+      "portal-postgres" (list "portal-backend" "ai-service" "gitea")
+      "keycloak-postgres" (list "keycloak") }}
+{{- range $target, $callers := $from }}
+{{- $ctx := dict "root" $root "c" $target }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        {{- range $caller := $callers }}
+        - podSelector:
+            matchLabels: {{- include "bp.selector" (dict "root" $root "c" $caller) | nindent 14 }}
+        {{- end }}
+{{- end }}
+{{- end }}

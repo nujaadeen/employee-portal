@@ -74,3 +74,8 @@ See the report in the earlier session. `mvn verify` passes, stack runs.
 - [x] 6. Seed data
 - [x] 7. Docs
 - [x] 8. Verify (down, up from scratch, smoke, seed, screenshots in docs/kind/)
+
+## Helm chart for kind
+- [x] Chart infra/helm/baracel-portal (helpers, values and schema, all components, ingress, EndpointSlice for Ollama, optional NetworkPolicy and PDB, helm test)
+- [x] KIND_DEPLOY=helm in scripts/kind-up.sh, docs
+- [ ] Deployed in kind with Helm, smoke test, seed

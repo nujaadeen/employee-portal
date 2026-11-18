@@ -1,0 +1,26 @@
+Baracel Portal {{ .Chart.AppVersion }} is installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+  Portal    {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.portal) }}/
+  Keycloak  {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.auth) }}/
+  Gitea     {{ include "bp.url" (dict "root" . "host" .Values.global.hosts.git) }}/
+  Issuer    {{ include "bp.issuer" . }}
+
+Check it:
+  kubectl -n {{ .Release.Namespace }} get pods
+  helm -n {{ .Release.Namespace }} test {{ .Release.Name }}
+
+{{- if eq .Values.global.scheme "http" }}
+
+NOTE: plain HTTP. Browsers only offer the Web Crypto API (needed for the sign-in) on https or localhost.
+See docs/kind.md, "The portal opens but Sign in does nothing".
+{{- end }}
+{{- if .Values.config.springProfile }}
+
+NOTE: the backend runs with the "{{ .Values.config.springProfile }}" Spring profile (demo seed data). Leave config.springProfile empty in production.
+{{- end }}
+{{- if eq .Values.config.ai.llmProvider "ollama" }}
+
+The AI service reaches Ollama at {{ .Values.ollama.hostAddress | default "(not set)" }}:{{ .Values.ollama.port }}.
+{{- end }}
+
+Gitea still needs its admin user, API token, repositories, webhook and OAuth source: scripts/kind-gitea.sh does that for kind.

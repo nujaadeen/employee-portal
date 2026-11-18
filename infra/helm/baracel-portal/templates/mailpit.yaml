@@ -1,0 +1,44 @@
+{{- if .Values.mailpit.enabled }}
+{{- $c := "mailpit" }}{{- $ctx := dict "root" . "c" $c }}
+---
+{{ include "bp.serviceAccount" $ctx }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "bp.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: smtp, port: 1025, targetPort: smtp }
+    - { name: http, port: 8025, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bp.res" $ctx }}
+  labels: {{- include "bp.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "bp.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "bp.labels" $ctx | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "bp.res" $ctx }}
+      automountServiceAccountToken: false
+      {{- include "bp.imagePullSecrets" . | nindent 6 }}
+      securityContext: {{- include "bp.podSecurityContext" (dict "root" . "own" (dict)) | nindent 8 }}
+      containers:
+        - name: mailpit
+          image: {{ include "bp.image" .Values.mailpit.image }}
+          imagePullPolicy: {{ .Values.mailpit.image.pullPolicy }}
+          ports: [{ name: smtp, containerPort: 1025 }, { name: http, containerPort: 8025 }]
+          securityContext: {{- include "bp.containerSecurityContext" . | nindent 12 }}
+          readinessProbe: { httpGet: { path: /livez, port: http }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /livez, port: http }, periodSeconds: 20 }
+          resources: {{- toYaml .Values.mailpit.resources | nindent 12 }}
+      {{- include "bp.scheduling" . | nindent 6 }}
+{{- end }}
